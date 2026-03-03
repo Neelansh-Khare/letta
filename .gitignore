@@ -1004,3 +1004,8 @@ tests/test_tool_sandbox/restaurant_management_system/venv
 
 ## custom scripts
 test
+nul
+certs/localhost-key.pem
+certs/localhost.pem
+certs/localhost-key.pem
+tests/benchmarks/longmemeval/data/longmemeval_s_cleaned.json

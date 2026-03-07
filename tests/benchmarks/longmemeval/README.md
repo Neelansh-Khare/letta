@@ -15,8 +15,10 @@ The benchmark uses the LongMemEval dataset, which contains long-form conversatio
    letta server
    ```
 
-2. **Download the data**:
-   The data can be found on Hugging Face at `xiaowu0162/longmemeval-cleaned`. Download `longmemeval_s_cleaned.json` (small) or `longmemeval_m_cleaned.json` (medium) and place them in the `tests/benchmarks/longmemeval/data/` directory.
+2. **Download the data** (if not already present):
+   ```bash
+   python tests/benchmarks/longmemeval/download_data.py
+   ```
 
 3. **Run the benchmark**:
    ```bash

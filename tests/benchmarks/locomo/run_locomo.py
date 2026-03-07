@@ -3,6 +3,7 @@ import argparse
 import json
 from tqdm import tqdm
 from letta_client import Letta
+from letta_client.types import MessageCreateParam
 from tests.benchmarks.common.runner import BenchmarkRunner
 from tests.benchmarks.common.utils import load_json, save_json, calculate_f1
 

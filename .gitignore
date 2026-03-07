@@ -1008,4 +1008,7 @@ nul
 certs/localhost-key.pem
 certs/localhost.pem
 certs/localhost-key.pem
-tests/benchmarks/longmemeval/data/longmemeval_s_cleaned.json
+
+# Evaluation benchmarks
+tests/benchmarks/*/data/
+tests/benchmarks/data/

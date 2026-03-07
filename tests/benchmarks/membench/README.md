@@ -16,7 +16,12 @@ The benchmark uses a suite of tasks that simulate interaction scenarios where in
    letta server
    ```
 
-2. **Run the benchmark**:
+2. **Download the data** (if not already present):
+   ```bash
+   python tests/benchmarks/membench/download_data.py
+   ```
+
+3. **Run the benchmark**:
    ```bash
    python tests/benchmarks/membench/run_membench.py --model openai/gpt-4o-mini
    ```

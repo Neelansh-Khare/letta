@@ -2,6 +2,7 @@ import json
 import os
 import re
 from typing import Any, Dict, List, Set
+from collections import Counter
 
 def load_json(file_path: str) -> Any:
     """Loads data from a JSON file."""
@@ -32,6 +33,9 @@ def calculate_f1(prediction: str, ground_truth: str) -> float:
     """Calculates token-level F1 score."""
     prediction_tokens = normalize_answer(prediction).split()
     ground_truth_tokens = normalize_answer(ground_truth).split()
+    if not prediction_tokens or not ground_truth_tokens:
+        return 1.0 if prediction_tokens == ground_truth_tokens else 0.0
+    
     common = Counter(prediction_tokens) & Counter(ground_truth_tokens)
     num_same = sum(common.values())
     if num_same == 0:
@@ -40,5 +44,3 @@ def calculate_f1(prediction: str, ground_truth: str) -> float:
     recall = 1.0 * num_same / len(ground_truth_tokens)
     f1 = (2 * precision * recall) / (precision + recall)
     return f1
-
-from collections import Counter

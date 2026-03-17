@@ -39,29 +39,15 @@ def run_longmemeval(args):
         # Feed the haystack_sessions
         # LongMemEval has multiple sessions which can be quite long.
         for session in item['haystack_sessions']:
-            for msg in session:
-                role = msg['role']
-                content = msg['content']
-                
-                if role == 'user':
-                    # Feed to agent
-                    runner.run_interaction(content)
-                else:
-                    # Assistant message from history - we could either:
-                    # 1. Skip it (agent will generate its own response to user message)
-                    # 2. Add it to history manually if the API supports it
-                    # For this benchmark, we'll let the agent respond naturally to the user message.
-                    # Note: This means the agent's history might diverge slightly from the dataset's history,
-                    # but it tests its ability to store and recall the *information* from the user.
-                    pass
+            # Preload the entire session's messages efficiently
+            runner.bulk_add_messages(session, args.model)
         
         # Evaluate the question
         question = item['question']
         ground_truth = item['answer']
         
         # Ask the final question
-        response_messages = runner.run_interaction(f"Final Question based on our entire history: {question}
-Answer briefly.")
+        response_messages = runner.run_interaction(f"Final Question based on our entire history: {question}\nAnswer briefly.")
         
         # Extract prediction
         prediction = ""
@@ -96,8 +82,7 @@ Answer briefly.")
         "items_processed": len(results)
     }
     
-    print(f"
-LongMemEval Benchmark Summary:")
+    print(f"\nLongMemEval Benchmark Summary:")
     print(f"Model: {args.model}")
     print(f"Overall F1 Score: {overall_f1:.4f}")
     

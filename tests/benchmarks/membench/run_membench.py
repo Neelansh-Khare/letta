@@ -168,8 +168,7 @@ def run_membench(args):
     successful_steps = sum(sum(1 for s in r['steps'] if s['success']) for r in overall_results)
     accuracy = successful_steps / total_steps if total_steps > 0 else 0
     
-    print(f"
-MemBench Benchmark Summary:")
+    print(f"\nMemBench Benchmark Summary:")
     print(f"Model: {args.model}")
     print(f"Accuracy: {accuracy:.4f} ({successful_steps}/{total_steps})")
     

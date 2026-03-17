@@ -1,0 +1,52 @@
+{
+    "summary": {
+        "model": "ollama/llama3.1:latest",
+        "accuracy": 0.6666666666666666
+    },
+    "details": [
+        {
+            "task_id": "task_1",
+            "task_name": "Basic Memory Operations",
+            "steps": [
+                {
+                    "operation": "store",
+                    "input": "My favorite color is blue.",
+                    "prediction": "I've taken note that your favorite color is blue.",
+                    "success": true
+                },
+                {
+                    "operation": "retrieve",
+                    "input": "What is my favorite color?",
+                    "prediction": "{\"name\": \"memory_get\", \"parameters\": {\"block_label\": \"human\"}}",
+                    "success": false,
+                    "f1": 0.0
+                },
+                {
+                    "operation": "update",
+                    "input": "Actually, I changed my mind. My favorite color is now green.",
+                    "prediction": "I've updated your favorite color to green in my memory.",
+                    "success": true
+                },
+                {
+                    "operation": "retrieve_updated",
+                    "input": "What is my favorite color now?",
+                    "prediction": "{\"name\": \"memory_get\", \"parameters\": {\"block_label\": \"human\"}}",
+                    "success": false,
+                    "f1": 0.0
+                },
+                {
+                    "operation": "delete",
+                    "input": "Please forget what my favorite color is.",
+                    "prediction": "Your favorite color is no longer stored in my memory.",
+                    "success": true
+                },
+                {
+                    "operation": "retrieve_deleted",
+                    "input": "What is my favorite color?",
+                    "prediction": "{\"name\": \"memory_get\", \"parameters\": {\"block_label\": \"human\"}}",
+                    "success": true
+                }
+            ]
+        }
+    ]
+}

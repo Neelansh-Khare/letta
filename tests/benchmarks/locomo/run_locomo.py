@@ -38,12 +38,14 @@ def run_locomo(args):
         
         for session_key in sessions:
             session_messages = conversation[session_key]
+            formatted_messages = []
             for msg in session_messages:
                 # Format: "Speaker: Text"
-                formatted_msg = f"{msg['speaker']}: {msg['text']}"
-                # We send the message and ignore the immediate response for now, 
-                # as we are building up the agent's memory.
-                runner.run_interaction(formatted_msg)
+                role = "user" if msg['speaker'] == conversation['speaker_a'] else "assistant"
+                formatted_messages.append({"role": role, "content": f"{msg['speaker']}: {msg['text']}"})
+            
+            # Preload the entire session's messages efficiently
+            runner.bulk_add_messages(formatted_messages, args.model)
         
         # Evaluate QA
         qa_results = []

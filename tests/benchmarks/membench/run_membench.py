@@ -1,11 +1,24 @@
-import os
 import argparse
-import json
-from tqdm import tqdm
+
 from letta_client import Letta
-from letta_client.types import MessageCreateParam
+from tqdm import tqdm
+
+from tests.benchmarks.common.preflight import assert_preflight_ok, print_preflight_report, run_benchmark_preflight
 from tests.benchmarks.common.runner import BenchmarkRunner
-from tests.benchmarks.common.utils import load_json, save_json, calculate_f1
+from tests.benchmarks.common.utils import (
+    average,
+    build_output_payload,
+    build_run_metadata,
+    calculate_f1,
+    default_benchmark_base_url,
+    default_benchmark_model,
+    extract_text_from_messages,
+    load_json,
+    save_json,
+)
+
+BENCHMARK_NAME = "membench_synthetic"
+
 
 def create_synthetic_membench():
     """Creates a synthetic MemBench dataset for testing store, retrieve, update, delete."""
@@ -86,102 +99,138 @@ def create_synthetic_membench():
     return data
 
 def run_membench(args):
+    if not args.skip_preflight:
+        preflight_results = run_benchmark_preflight(
+            benchmark_name=BENCHMARK_NAME,
+            base_url=args.base_url,
+            model=args.model,
+            data_path=args.data_path,
+            output_path=args.output_path,
+            require_dataset=False,
+        )
+        print_preflight_report(preflight_results)
+        assert_preflight_ok(preflight_results)
+
     client = Letta(base_url=args.base_url)
-    
-    if os.path.exists(args.data_path):
+
+    try:
         data = load_json(args.data_path)
-    else:
+        data_source = "dataset"
+    except FileNotFoundError:
         print(f"Data not found at {args.data_path}. Using synthetic data.")
         data = create_synthetic_membench()
         save_json(data, args.data_path)
-    
+        data_source = "synthetic_fallback"
+
     if args.limit:
         data = data[:args.limit]
-    
+
     overall_results = []
-    
+    total_tasks = len(data)
+
     for task in tqdm(data, desc="Running MemBench tasks"):
+        task_index = len(overall_results) + 1
+        print(f"[MemBench] Task {task_index}/{total_tasks}: {task['name']} ({task['id']})")
         agent = client.agents.create(
             name=f"membench_agent_{task['id']}",
             model=args.model,
             memory_blocks=[
                 {"label": "persona", "value": "I am a helpful assistant with a perfect memory."},
-                {"label": "human", "value": "I am a user testing your memory."}
-            ]
+                {"label": "human", "value": "I am a user testing your memory."},
+            ],
         )
-        
-        runner = BenchmarkRunner(client, agent.id)
+
+        runner = BenchmarkRunner(client, agent.id, model_handle=args.model)
         task_results = []
-        
-        for step in task['steps']:
-            op = step['operation']
-            input_text = step['input']
-            
+        total_steps = len(task["steps"])
+
+        for step_idx, step in enumerate(task["steps"], start=1):
+            op = step["operation"]
+            input_text = step["input"]
+            print(f"[MemBench] Task {task_index}/{total_tasks}: step {step_idx}/{total_steps} ({op})")
             response_messages = runner.run_interaction(input_text)
-            
-            # Find prediction
-            prediction = ""
-            for m in reversed(response_messages):
-                if hasattr(m, 'content') and m.content:
-                    if isinstance(m.content, str):
-                        prediction = m.content
-                        break
-                    elif isinstance(m.content, list):
-                        prediction = " ".join([c.text for c in m.content if hasattr(c, 'text')])
-                        break
-            
+
+            prediction = extract_text_from_messages(response_messages)
             result = {
                 "operation": op,
                 "input": input_text,
                 "prediction": prediction,
-                "success": False
+                "success": False,
             }
-            
+
             if op.startswith("retrieve"):
                 expected = step.get("expected")
                 expected_not = step.get("expected_not")
-                
+
                 if expected:
                     f1 = calculate_f1(prediction, expected)
                     result["f1"] = f1
-                    result["success"] = f1 > 0.5 # Threshold for success
+                    result["success"] = f1 > 0.5
                 elif expected_not:
-                    # For delete, we want to make sure the old info is NOT there
                     if expected_not.lower() not in prediction.lower():
                         result["success"] = True
             else:
-                # For store/update/delete commands, we just assume success if the agent responded
                 result["success"] = True
-                
+
             task_results.append(result)
-            
+
         overall_results.append({
-            "task_id": task['id'],
-            "task_name": task['name'],
-            "steps": task_results
+            "task_id": task["id"],
+            "task_name": task["name"],
+            "steps": task_results,
         })
-        
+        successes = sum(1 for step in task_results if step["success"])
+        print(f"[MemBench] Task {task_index}/{total_tasks}: complete ({successes}/{total_steps} successful)")
+
         client.agents.delete(agent.id)
 
-    # Calculate aggregate metrics
-    total_steps = sum(len(r['steps']) for r in overall_results)
-    successful_steps = sum(sum(1 for s in r['steps'] if s['success']) for r in overall_results)
+    total_steps = sum(len(result["steps"]) for result in overall_results)
+    successful_steps = sum(sum(1 for step in result["steps"] if step["success"]) for result in overall_results)
     accuracy = successful_steps / total_steps if total_steps > 0 else 0
-    
-    print(f"\nMemBench Benchmark Summary:")
+
+    retrieval_scores = [
+        step["f1"]
+        for result in overall_results
+        for step in result["steps"]
+        if "f1" in step
+    ]
+    retrieval_f1 = average(retrieval_scores)
+
+    print("\nMemBench Benchmark Summary:")
     print(f"Model: {args.model}")
     print(f"Accuracy: {accuracy:.4f} ({successful_steps}/{total_steps})")
-    
+
     if args.output_path:
-        save_json({"summary": {"model": args.model, "accuracy": accuracy}, "details": overall_results}, args.output_path)
+        summary = {
+            "benchmark": BENCHMARK_NAME,
+            "model": args.model,
+            "base_url": args.base_url,
+            "accuracy": accuracy,
+            "retrieval_f1": retrieval_f1,
+            "successful_steps": successful_steps,
+            "total_steps": total_steps,
+            "data_source": data_source,
+        }
+        metadata = build_run_metadata(
+            benchmark_name=BENCHMARK_NAME,
+            model=args.model,
+            base_url=args.base_url,
+            data_path=args.data_path,
+            limit=args.limit,
+            output_path=args.output_path,
+            extra={"data_source": data_source},
+        )
+        payload = build_output_payload(benchmark_name=BENCHMARK_NAME, summary=summary, details=overall_results, metadata=metadata)
+        save_json(payload, args.output_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run MemBench benchmark on Letta.")
-    parser.add_argument("--base_url", type=str, default="http://localhost:8283", help="Letta server base URL")
+    parser.add_argument("--base_url", type=str, default=default_benchmark_base_url(), help="Letta server base URL")
     parser.add_argument("--data_path", type=str, default="tests/benchmarks/membench/data/membench_synthetic.json", help="Path to MemBench dataset")
-    parser.add_argument("--model", type=str, default="openai/gpt-4o-mini", help="Model to use for the agent")
+    parser.add_argument("--model", type=str, default=default_benchmark_model(), help="Model handle to use for the agent")
     parser.add_argument("--limit", type=int, default=None, help="Limit the number of tasks to process")
     parser.add_argument("--output_path", type=str, default="tests/benchmarks/membench/results.json", help="Path to save results")
-    
+    parser.add_argument("--skip-preflight", action="store_true", help="Skip benchmark preflight checks")
+
     args = parser.parse_args()
     run_membench(args)

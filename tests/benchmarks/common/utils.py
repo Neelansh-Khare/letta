@@ -96,6 +96,7 @@ def get_git_commit() -> Optional[str]:
 
 def build_environment_metadata() -> dict[str, Any]:
     """Builds runtime environment metadata for benchmark outputs."""
+    from letta import __version__ as letta_version
     selected_env = {
         key: os.getenv(key)
         for key in ["LETTA_BENCHMARK_BASE_URL", "LETTA_BENCHMARK_MODEL", "OLLAMA_BASE_URL", "LETTA_PG_URI"]
@@ -103,6 +104,7 @@ def build_environment_metadata() -> dict[str, Any]:
     }
     return {
         "schema_version": BENCHMARK_SCHEMA_VERSION,
+        "letta_version": letta_version,
         "platform": {
             "system": platform.system(),
             "release": platform.release(),

@@ -50,8 +50,13 @@ def print_human_summary(rows: list[dict[str, Any]]) -> None:
         print(f"  model: {row['model']}")
         print(f"  run_at: {row['run_at']}")
         metrics = row["metrics"]
-        printable_metrics = ", ".join(f"{key}={value}" for key, value in metrics.items() if key not in {"benchmark", "model", "base_url"})
+        printable_metrics = ", ".join(
+            f"{key}={value}" for key, value in metrics.items() if key not in {"benchmark", "model", "base_url", "usage"}
+        )
         print(f"  metrics: {printable_metrics or 'none'}")
+        if "usage" in row["summary"]:
+            u = row["summary"]["usage"]
+            print(f"  usage: tokens={u.get('total_tokens', 0)} (prompt={u.get('prompt_tokens', 0)}, completion={u.get('completion_tokens', 0)}) steps={u.get('step_count', 0)}")
 
 
 def main():

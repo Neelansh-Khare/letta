@@ -83,6 +83,9 @@ def run_locomo(args):
             response_messages = runner.run_interaction(f"Question: {question}\nAnswer briefly based on our conversation history.")
 
             prediction = extract_text_from_messages(response_messages)
+            last_interaction = runner.get_history()[-1]
+            latency = last_interaction.get("latency_seconds", 0)
+            usage = last_interaction.get("usage")
             f1 = calculate_f1(prediction, str(ground_truth))
 
             qa_results.append({
@@ -90,6 +93,8 @@ def run_locomo(args):
                 "ground_truth": ground_truth,
                 "prediction": prediction,
                 "f1": f1,
+                "latency_seconds": latency,
+                "usage": usage,
             })
 
         avg_f1 = average(result["f1"] for result in qa_results)
@@ -98,6 +103,14 @@ def run_locomo(args):
             "avg_f1": avg_f1,
             "qa_count": len(qa_results),
             "qa_details": qa_results,
+            "average_latency_seconds": average(qa["latency_seconds"] for qa in qa_results),
+            "total_latency_seconds": sum(qa["latency_seconds"] for qa in qa_results),
+            "usage": {
+                "completion_tokens": sum(qa.get("usage", {}).get("completion_tokens", 0) for qa in qa_results if qa.get("usage")),
+                "prompt_tokens": sum(qa.get("usage", {}).get("prompt_tokens", 0) for qa in qa_results if qa.get("usage")),
+                "total_tokens": sum(qa.get("usage", {}).get("total_tokens", 0) for qa in qa_results if qa.get("usage")),
+                "step_count": sum(qa.get("usage", {}).get("step_count", 0) for qa in qa_results if qa.get("usage")),
+            },
         })
         print(f"[LOCOMO] Item {item_idx + 1}/{total_items}: complete (avg_f1={avg_f1:.4f})")
 
@@ -110,6 +123,14 @@ def run_locomo(args):
         "base_url": args.base_url,
         "overall_f1": overall_f1,
         "items_processed": len(results),
+        "average_latency_seconds": average(result["average_latency_seconds"] for result in results),
+        "total_latency_seconds": sum(result["total_latency_seconds"] for result in results),
+        "usage": {
+            "completion_tokens": sum(result["usage"]["completion_tokens"] for result in results),
+            "prompt_tokens": sum(result["usage"]["prompt_tokens"] for result in results),
+            "total_tokens": sum(result["usage"]["total_tokens"] for result in results),
+            "step_count": sum(result["usage"]["step_count"] for result in results),
+        },
     }
 
     print("\nLOCOMO Benchmark Summary:")

@@ -64,6 +64,7 @@ def run_emembench(args):
                     "f1": f1_for_any(prediction, question.get("answer", "")),
                     "exact_match": exact_match(prediction, question.get("answer", "")),
                     "latency_seconds": latency,
+                    "usage": runner.get_history()[-1].get("usage"),
                 }
             )
 
@@ -77,6 +78,13 @@ def run_emembench(args):
         "overall_f1": average(item["f1"] for item in details),
         "exact_match_rate": average(item["exact_match"] for item in details),
         "average_latency_seconds": average_latency(item["latency_seconds"] for item in details),
+        "total_latency_seconds": sum(item["latency_seconds"] for item in details),
+        "usage": {
+            "completion_tokens": sum(item.get("usage", {}).get("completion_tokens", 0) for item in details if item.get("usage")),
+            "prompt_tokens": sum(item.get("usage", {}).get("prompt_tokens", 0) for item in details if item.get("usage")),
+            "total_tokens": sum(item.get("usage", {}).get("total_tokens", 0) for item in details if item.get("usage")),
+            "step_count": sum(item.get("usage", {}).get("step_count", 0) for item in details if item.get("usage")),
+        },
     }
     if args.output_path:
         metadata = build_run_metadata(

@@ -85,6 +85,9 @@ def run_membench_real(args):
         response_messages = runner.run_interaction(f"Question: {question}\nAnswer briefly.")
 
         prediction = extract_text_from_messages(response_messages)
+        last_interaction = runner.get_history()[-1]
+        latency = last_interaction.get("latency_seconds", 0)
+        usage = last_interaction.get("usage")
         f1 = calculate_f1(prediction, str(ground_truth))
 
         results.append({
@@ -93,6 +96,10 @@ def run_membench_real(args):
             "ground_truth": ground_truth,
             "prediction": prediction,
             "f1": f1,
+            "latency_seconds": latency,
+            "usage": usage,
+            "total_usage": runner.get_total_usage(),
+            "total_latency_seconds": runner.get_total_latency(),
         })
         print(f"[MemBench Real] Item {item_idx}/{total_items}: complete (f1={f1:.4f})")
 
@@ -111,6 +118,14 @@ def run_membench_real(args):
             "base_url": args.base_url,
             "overall_f1": overall_f1,
             "items_processed": len(results),
+            "average_latency_seconds": average(result["total_latency_seconds"] for result in results),
+            "total_latency_seconds": sum(result["total_latency_seconds"] for result in results),
+            "usage": {
+                "completion_tokens": sum(res["total_usage"]["completion_tokens"] for res in results),
+                "prompt_tokens": sum(res["total_usage"]["prompt_tokens"] for res in results),
+                "total_tokens": sum(res["total_usage"]["total_tokens"] for res in results),
+                "step_count": sum(res["total_usage"]["step_count"] for res in results),
+            },
         }
         metadata = build_run_metadata(
             benchmark_name=BENCHMARK_NAME,

@@ -114,6 +114,7 @@ def run_memoryarena(args):
                 "f1": f1_for_any(prediction, answer_text),
                 "exact_match": exact_match(prediction, answer_text),
                 "latency_seconds": latency,
+                "usage": runner.get_history()[-1].get("usage"),
             }
             subtasks.append(subtask_result)
             latencies.append(latency)
@@ -125,6 +126,7 @@ def run_memoryarena(args):
                 "subtasks": subtasks,
                 "task_success_rate": task_success_rate(item["exact_match"] for item in subtasks),
                 "average_latency_seconds": average_latency(latencies),
+                "total_latency_seconds": sum(latencies),
             }
         )
         client.agents.delete(agent.id)
@@ -140,6 +142,13 @@ def run_memoryarena(args):
         "exact_match_rate": average(item["exact_match"] for item in flattened),
         "task_success_rate": average(item["task_success_rate"] for item in results),
         "average_latency_seconds": average(item["latency_seconds"] for item in flattened),
+        "total_latency_seconds": sum(item["latency_seconds"] for item in flattened),
+        "usage": {
+            "completion_tokens": sum(item.get("usage", {}).get("completion_tokens", 0) for item in flattened if item.get("usage")),
+            "prompt_tokens": sum(item.get("usage", {}).get("prompt_tokens", 0) for item in flattened if item.get("usage")),
+            "total_tokens": sum(item.get("usage", {}).get("total_tokens", 0) for item in flattened if item.get("usage")),
+            "step_count": sum(item.get("usage", {}).get("step_count", 0) for item in flattened if item.get("usage")),
+        },
     }
     if args.output_path:
         metadata = build_run_metadata(

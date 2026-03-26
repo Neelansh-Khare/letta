@@ -151,11 +151,17 @@ def run_membench(args):
             response_messages = runner.run_interaction(input_text)
 
             prediction = extract_text_from_messages(response_messages)
+            last_interaction = runner.get_history()[-1]
+            latency = last_interaction.get("latency_seconds", 0)
+            usage = last_interaction.get("usage")
+
             result = {
                 "operation": op,
                 "input": input_text,
                 "prediction": prediction,
                 "success": False,
+                "latency_seconds": latency,
+                "usage": usage,
             }
 
             if op.startswith("retrieve"):
@@ -178,6 +184,14 @@ def run_membench(args):
             "task_id": task["id"],
             "task_name": task["name"],
             "steps": task_results,
+            "average_latency_seconds": average(step["latency_seconds"] for step in task_results),
+            "total_latency_seconds": sum(step["latency_seconds"] for step in task_results),
+            "usage": {
+                "completion_tokens": sum(step.get("usage", {}).get("completion_tokens", 0) for step in task_results if step.get("usage")),
+                "prompt_tokens": sum(step.get("usage", {}).get("prompt_tokens", 0) for step in task_results if step.get("usage")),
+                "total_tokens": sum(step.get("usage", {}).get("total_tokens", 0) for step in task_results if step.get("usage")),
+                "step_count": sum(step.get("usage", {}).get("step_count", 0) for step in task_results if step.get("usage")),
+            },
         })
         successes = sum(1 for step in task_results if step["success"])
         print(f"[MemBench] Task {task_index}/{total_tasks}: complete ({successes}/{total_steps} successful)")
@@ -201,6 +215,7 @@ def run_membench(args):
     print(f"Accuracy: {accuracy:.4f} ({successful_steps}/{total_steps})")
 
     if args.output_path:
+        all_steps = [step for res in overall_results for step in res["steps"]]
         summary = {
             "benchmark": BENCHMARK_NAME,
             "model": args.model,
@@ -210,6 +225,14 @@ def run_membench(args):
             "successful_steps": successful_steps,
             "total_steps": total_steps,
             "data_source": data_source,
+            "average_latency_seconds": average(step["latency_seconds"] for step in all_steps),
+            "total_latency_seconds": sum(step["latency_seconds"] for step in all_steps),
+            "usage": {
+                "completion_tokens": sum(res["usage"]["completion_tokens"] for res in overall_results),
+                "prompt_tokens": sum(res["usage"]["prompt_tokens"] for res in overall_results),
+                "total_tokens": sum(res["usage"]["total_tokens"] for res in overall_results),
+                "step_count": sum(res["usage"]["step_count"] for res in overall_results),
+            },
         }
         metadata = build_run_metadata(
             benchmark_name=BENCHMARK_NAME,

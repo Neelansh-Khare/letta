@@ -76,6 +76,9 @@ def run_longmemeval(args):
         response_messages = runner.run_interaction(f"Final Question based on our entire history: {question}\nAnswer briefly.")
 
         prediction = extract_text_from_messages(response_messages)
+        last_interaction = runner.get_history()[-1]
+        latency = last_interaction.get("latency_seconds", 0)
+        usage = last_interaction.get("usage")
         f1 = calculate_f1(prediction, str(ground_truth))
 
         results.append({
@@ -84,6 +87,8 @@ def run_longmemeval(args):
             "ground_truth": ground_truth,
             "prediction": prediction,
             "f1": f1,
+            "latency_seconds": latency,
+            "usage": usage,
         })
         print(f"[LongMemEval] Item {item_idx + 1}/{total_items}: complete (f1={f1:.4f})")
 
@@ -96,6 +101,14 @@ def run_longmemeval(args):
         "base_url": args.base_url,
         "overall_f1": overall_f1,
         "items_processed": len(results),
+        "average_latency_seconds": average(item["latency_seconds"] for item in results),
+        "total_latency_seconds": sum(item["latency_seconds"] for item in results),
+        "usage": {
+            "completion_tokens": sum(item.get("usage", {}).get("completion_tokens", 0) for item in results if item.get("usage")),
+            "prompt_tokens": sum(item.get("usage", {}).get("prompt_tokens", 0) for item in results if item.get("usage")),
+            "total_tokens": sum(item.get("usage", {}).get("total_tokens", 0) for item in results if item.get("usage")),
+            "step_count": sum(item.get("usage", {}).get("step_count", 0) for item in results if item.get("usage")),
+        },
     }
 
     print("\nLongMemEval Benchmark Summary:")

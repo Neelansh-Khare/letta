@@ -95,6 +95,7 @@ def run_clonemem(args):
                     "exact_match": exact_match(prediction, question.get("answer", "")),
                     "mcq_accuracy": choice_accuracy(prediction, question.get("correct_choice_id")),
                     "latency_seconds": latency,
+                    "usage": runner.get_history()[-1].get("usage"),
                 }
             )
             latencies.append(latency)
@@ -112,6 +113,13 @@ def run_clonemem(args):
         "exact_match_rate": average(item["exact_match"] for item in results),
         "mcq_accuracy": average(item["mcq_accuracy"] for item in results),
         "average_latency_seconds": average_latency(item["latency_seconds"] for item in results),
+        "total_latency_seconds": sum(item["latency_seconds"] for item in results),
+        "usage": {
+            "completion_tokens": sum(item.get("usage", {}).get("completion_tokens", 0) for item in results if item.get("usage")),
+            "prompt_tokens": sum(item.get("usage", {}).get("prompt_tokens", 0) for item in results if item.get("usage")),
+            "total_tokens": sum(item.get("usage", {}).get("total_tokens", 0) for item in results if item.get("usage")),
+            "step_count": sum(item.get("usage", {}).get("step_count", 0) for item in results if item.get("usage")),
+        },
     }
     if args.output_path:
         metadata = build_run_metadata(

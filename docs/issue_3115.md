@@ -1,6 +1,51 @@
 Summary
 Add standardized evaluation benchmarks to measure and demonstrate Letta's memory system performance, including LOCOMO, MemBench, and LongMemEval.
 
+---
+### Update: 2026 Q1 Benchmark Landscape Has Evolved Significantly
+Since this issue was filed, the memory evaluation field has moved fast. Several 2026 papers expose critical limitations in the benchmarks originally proposed here (LOCOMO, MemBench, LongMemEval) and introduce stronger alternatives. Here is an updated proposal.
+
+#### LOCOMO Is Approaching Saturation
+A comprehensive 2026 survey (arXiv:2603.07670) found that "models that score near-perfectly on LoCoMo plummet to 40–60% in MemoryArena". The survey identifies MemGPT/Letta as a key hierarchical memory system (Pattern C: tiered memory with prompted control) but notes the absence of standardized evaluation.
+
+#### New Benchmarks Worth Adding
+**Tier 1: Recommended**
+
+| Benchmark | Paper | Scale | Key Insight |
+| :--- | :--- | :--- | :--- |
+| **EverMemBench** | arXiv:2602.01313 | 2,400 QA, 10K turns, ~1M tokens | Multi-hop reasoning drops to 26% despite 97.65% single-hop; temporal reasoning collapses to 7–45%. Mem0 scored 37.09%, MemOS 42.55%, Zep 39.97%, while Gemini-3-Flash hit 72.61%. |
+| **MemoryArena** | cited in arXiv:2603.07670 | Multi-session agentic tasks | Where LOCOMO high-scorers plummet to 40–60%. Tests active decision-making, not just passive recall. |
+| **CloneMem** | arXiv:2601.07023 | ~5K QA, 10 personas, 1-3 year traces | 8 task types (factual → counterfactual). Simple flat retrieval outperformed Mem0 and A-Mem. |
+
+**Tier 2: Supplementary**
+
+| Benchmark | Paper | Key Feature |
+| :--- | :--- | :--- |
+| **LongMemEvalS** | arXiv:2603.16862 | 500 questions, 6 categories. Chronos achieved 95.60% SOTA. |
+| **EMemBench** | arXiv:2601.16690 | Interactive gameplay-based, 6 memory skills, "far from saturated". |
+| **LOCOMO** | (legacy) | Useful only as baseline floor. |
+
+#### Evaluation Should Go Beyond Recall/Accuracy
+The survey (arXiv:2603.07670) proposes a four-layer metric stack:
+1. **Task effectiveness** — success rates, plan completion
+2. **Memory quality** — precision/recall, staleness, contradictions
+3. **Efficiency** — latency, token cost, storage growth
+4. **Governance** — privacy/deletion compliance
+
+EverMemBench adds critical dimensions: temporal reasoning (event lifecycles), multi-hop attribution (cross-group evidence chaining), and memory awareness (proactive constraint application).
+
+#### Letta Is Missing From Comparisons
+EverMemBench already has published baselines for Mem0, Zep, MemOS, and MemoBase. Letta/MemGPT is absent. Adding benchmark support would establish Letta's position in the field — especially on MemoryArena, which tests agentic memory (Letta's core differentiator).
+
+#### References (All 2026)
+* **Benchmarks:** EverMemBench (2602.01313), CloneMem (2601.07023), EMemBench (2601.16690), MemoryRewardBench (2601.11969), Chronos/LongMemEvalS (2603.16862)
+* **Surveys:** Memory for Autonomous LLM Agents (2603.07670), Anatomy of Agentic Memory (2602.19320), Graph-based Agent Memory (2602.05665)
+
+I'd be happy to submit a PR implementing these benchmarks for Letta. The recommended starting point would be **EverMemBench + MemoryArena** — EverMemBench has published baselines to compare against, and MemoryArena most clearly differentiates passive recall from agentic memory.
+
+@cpacker Would this direction be useful? Is benchmark integration on the roadmap?
+---
+
 Motivation
 Currently, Letta lacks any standardized benchmark or evaluation code to measure memory system performance. This makes it difficult to:
 

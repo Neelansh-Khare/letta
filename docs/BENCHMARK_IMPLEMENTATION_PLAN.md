@@ -15,10 +15,13 @@ This document outlines the plan for implementing standardized evaluation benchma
 4.  **Phase 4: Reporting and CI Integration (PLANNED)**
     *   Implement standardized reporting for all benchmarks.
     *   Integrate benchmark runs into the CI/CD pipeline.
+5.  **Phase 5: EverMemBench and MemoryArena Implementation (IN PROGRESS)**
+    *   Integrate EverMemBench for high-scale, multi-hop, and temporal reasoning (`tests/benchmarks/evermembench/`).
+    *   Integrate MemoryArena for multi-session agentic tasks (`tests/benchmarks/memoryarena/`).
 
 ## 2. Directory Structure
 
-The following directory structure has been created:
+The following directory structure has been updated:
 
 ```
 tests/
@@ -36,8 +39,16 @@ tests/
     │   ├── run_membench.py  # MemBench operations test script
     │   ├── README.md
     │   └── data/            # Contains synthetic and real data
-    └── longmemeval/
-        ├── run_longmemeval.py # Long-term memory retention script
+    ├── longmemeval/
+    │   ├── run_longmemeval.py # Long-term memory retention script
+    │   ├── README.md
+    │   └── data/
+    ├── evermembench/
+    │   ├── run_evermembench.py # EverMemBench script
+    │   ├── README.md
+    │   └── data/
+    └── memoryarena/
+        ├── run_memoryarena.py # MemoryArena script
         ├── README.md
         └── data/
 ```
@@ -68,3 +79,15 @@ tests/
 
 *   **Standardized Reports**: Ensure consistent machine-readable (JSON) output across all runners.
 *   **CI Integration**: Add GitHub Action workflows to track performance over time on memory-related changes.
+
+## 7. Phase 5: EverMemBench and MemoryArena Implementation (IN PROGRESS)
+
+### 7.1. EverMemBench Implementation (`tests/benchmarks/evermembench/`)
+
+*   **Data**: Sourced from `arXiv:2602.01313`. Covers ~2,400 QA pairs across 10K turns.
+*   **Metrics**: Focus on single-hop, multi-hop, and temporal reasoning recall (F1-score).
+
+### 7.2. MemoryArena Implementation (`tests/benchmarks/memoryarena/`)
+
+*   **Data**: Agentic tasks involving multi-session decision-making.
+*   **Metrics**: Task effectiveness (success rates) and plan completion.

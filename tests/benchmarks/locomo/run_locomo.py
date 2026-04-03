@@ -74,10 +74,17 @@ def run_locomo(args):
             )
 
         qa_results = []
-        total_qa = len(item["qa"])
-        for qa_idx, qa in enumerate(item["qa"], start=1):
-            question = qa["question"]
-            ground_truth = qa["answer"]
+        qa_items = item["qa"]
+        # Limit QA items for faster validation during development
+        if args.limit:
+            qa_items = qa_items[:args.limit]
+            
+        total_qa = len(qa_items)
+        for qa_idx, qa in enumerate(qa_items, start=1):
+            question = qa.get("question")
+            ground_truth = qa.get("answer", "")
+            if not question:
+                continue
             print(f"[LOCOMO] Item {item_idx + 1}/{total_items}: QA {qa_idx}/{total_qa}")
 
             response_messages = runner.run_interaction(f"Question: {question}\nAnswer briefly based on our conversation history.")

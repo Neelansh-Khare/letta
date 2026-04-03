@@ -36,11 +36,21 @@ def load_topics(data_dir: str) -> list[tuple[str, list[dict], list[dict]]]:
 
 def flatten_dialogues(dialogue_days: list[dict]) -> list[str]:
     entries = []
+    if not dialogue_days:
+        return entries
     for day in dialogue_days:
+        if not isinstance(day, dict):
+            continue
         date = day.get("date", "")
         dialogues = day.get("dialogues", {})
+        if not dialogues:
+            continue
         for group_name, messages in dialogues.items():
+            if not messages or not isinstance(messages, list):
+                continue
             for message in messages:
+                if not isinstance(message, dict):
+                    continue
                 speaker = message.get("speaker", "Unknown")
                 time = message.get("time", "")
                 content = message.get("dialogue", "")
@@ -79,14 +89,13 @@ def run_evermembench(args):
 
     client = Letta(base_url=args.base_url)
     topics = load_topics(args.data_dir)
-    if args.limit:
-        remaining = args.limit
-    else:
-        remaining = None
+    
+    # Track items processed across topics to honor global limit
+    remaining = args.limit if args.limit is not None else float('inf')
 
     results = []
     for topic_id, dialogue_days, qa_items in topics:
-        if remaining == 0:
+        if remaining <= 0:
             break
         agent = client.agents.create(
             name=f"evermembench_agent_{topic_id}",
@@ -103,9 +112,13 @@ def run_evermembench(args):
 
         topic_results = []
         latencies = []
-        for qa in tqdm(qa_items, desc=f"EverMemBench topic {topic_id}", leave=False):
-            if remaining == 0:
-                break
+        
+        # Honor global limit
+        qa_to_process = qa_items
+        if args.limit:
+            qa_to_process = qa_items[:int(remaining)]
+
+        for qa in tqdm(qa_to_process, desc=f"EverMemBench topic {topic_id}", leave=False):
             prompt = format_mcq_prompt(qa)
             response_messages, latency = runner.run_interaction_timed(prompt)
             prediction = extract_text_from_messages(response_messages)
@@ -134,8 +147,9 @@ def run_evermembench(args):
             }
             topic_results.append(item_result)
             latencies.append(latency)
-            if remaining is not None:
-                remaining -= 1
+            remaining -= 1
+            if remaining <= 0:
+                break
 
         results.extend(topic_results)
         client.agents.delete(agent.id)

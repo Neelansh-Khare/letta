@@ -1012,3 +1012,8 @@ certs/localhost-key.pem
 # Evaluation benchmarks
 tests/benchmarks/*/data/
 tests/benchmarks/data/
+tests/benchmarks/*/results.json
+tests/benchmarks/*/*.json
+!tests/benchmarks/*/README.md
+!tests/benchmarks/*/*.py
+!tests/benchmarks/*/__init__.py

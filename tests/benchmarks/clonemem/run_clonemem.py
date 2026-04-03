@@ -22,7 +22,16 @@ BENCHMARK_NAME = "clonemem"
 
 
 def load_personas(data_dir: str, context_len: str) -> list[dict]:
-    return [load_json(str(path)) for path in sorted(Path(data_dir, context_len).glob("*_benchmark_en.json"))]
+    path_pattern = str(Path(data_dir, context_len, "*_benchmark_en.json"))
+    paths = sorted(Path(data_dir, context_len).glob("*_benchmark_en.json"))
+    print(f"[CloneMem] Searching for personas in {data_dir}/{context_len} (found {len(paths)} files)")
+    if not paths:
+        # Fallback to searching without context_len if not found in subfolder
+        paths = sorted(Path(data_dir).glob("*_benchmark_en.json"))
+        if paths:
+            print(f"[CloneMem] Found {len(paths)} files in root data_dir instead")
+            
+    return [load_json(str(path)) for path in paths]
 
 
 def format_context_entry(trace: dict) -> str:

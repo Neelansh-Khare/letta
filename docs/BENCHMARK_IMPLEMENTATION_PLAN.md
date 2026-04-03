@@ -15,7 +15,7 @@ This document tracks the implementation status for memory benchmarks in this rep
 4.  **Phase 4: Reporting and CI Integration (PLANNED)**
     *   Implement standardized reporting for all benchmarks.
     *   Integrate benchmark runs into the CI/CD pipeline.
-5.  **Phase 5: EverMemBench and MemoryArena Implementation (IN PROGRESS)**
+5.  **Phase 5: EverMemBench and MemoryArena Implementation (COMPLETED)**
     *   Integrate EverMemBench for high-scale, multi-hop, and temporal reasoning (`tests/benchmarks/evermembench/`).
     *   Integrate MemoryArena for multi-session agentic tasks (`tests/benchmarks/memoryarena/`).
 
@@ -36,10 +36,6 @@ This document tracks the implementation status for memory benchmarks in this rep
 
 ### What is still missing
 
-- First-class support for newer Tier 1 benchmarks:
-  - EverMemBench
-  - MemoryArena
-  - CloneMem
 - A contributor-friendly benchmark environment contract:
   - Required env vars
   - Supported provider/model handle examples
@@ -70,8 +66,8 @@ This document tracks the implementation status for memory benchmarks in this rep
 4. LongMemEval: `PARTIAL`
    - Existing code is a starting point, but should be aligned with the newer LongMemEvalS direction where applicable.
 
-5. Modern 2026 benchmark coverage: `IN PROGRESS`
-   - EverMemBench and MemoryArena are under development. CloneMem is not yet implemented.
+5. Modern 2026 benchmark coverage: `COMPLETED`
+   - EverMemBench, MemoryArena, and CloneMem have been implemented as functional prototypes.
 
 6. Contributor portability: `PARTIAL`
    - Preflight checks now exist, but the contributor setup contract and explicit support matrix are still incomplete.
@@ -86,6 +82,7 @@ This document tracks the implementation status for memory benchmarks in this rep
 - Added a benchmark preflight flow that validates server reachability, model-handle validity, model availability, dataset presence, and output-path readiness.
 - Added live per-step progress output so long benchmark items do not appear stalled.
 - Added targeted unit coverage for helper, runner, and preflight behavior.
+- Implemented **EverMemBench**, **MemoryArena**, and **CloneMem** runners.
 
 ## 3. Directory Structure
 
@@ -118,6 +115,10 @@ tests/
     │   └── data/
     ├── memoryarena/
     │   ├── run_memoryarena.py # MemoryArena script
+    │   ├── README.md
+    │   └── data/
+    ├── clonemem/
+    │   ├── run_clonemem.py    # CloneMem script
     │   ├── README.md
     │   └── data/
     ├── run_all.py            # Aggregate entrypoint
@@ -201,10 +202,10 @@ The suite should report at least the following categories:
 - Document a support matrix for tested backends and operating systems.
 - Expand benchmark manifests with machine/runtime provenance so benchmark outputs can be compared across contributor setups more safely.
 
-### Phase 2: Tier 1 integrations (IN PROGRESS)
+### Phase 2: Tier 1 integrations (COMPLETED)
 
-- Implement EverMemBench. (IN PROGRESS)
-- Implement MemoryArena. (IN PROGRESS)
+- Implement EverMemBench.
+- Implement MemoryArena.
 - Implement CloneMem.
 
 ### Phase 3: Supplementary and legacy coverage

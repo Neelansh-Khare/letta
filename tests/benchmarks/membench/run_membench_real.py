@@ -67,12 +67,24 @@ def run_membench_real(args):
 
         runner = BenchmarkRunner(client, agent.id, model_handle=args.model)
 
-        for sub_list_idx, sub_list in enumerate(message_list, start=1):
-            print(f"[MemBench Real] Item {item_idx}/{total_items}: segment {sub_list_idx}/{len(message_list)}")
+        # Limit message segments for faster validation during development
+        segments = message_list
+        if args.limit:
+            segments = segments[:args.limit]
+
+        for sub_list_idx, sub_list in enumerate(segments, start=1):
+            print(f"[MemBench Real] Item {item_idx}/{total_items}: segment {sub_list_idx}/{len(segments)}")
+            formatted_messages = []
             for msg_obj in sub_list:
                 user_msg = msg_obj.get("user_message")
+                assistant_msg = msg_obj.get("assistant_message")
                 if user_msg:
-                    runner.run_interaction(user_msg)
+                    formatted_messages.append({"role": "user", "content": user_msg})
+                if assistant_msg:
+                    formatted_messages.append({"role": "assistant", "content": assistant_msg})
+            
+            if formatted_messages:
+                runner.bulk_add_messages(formatted_messages)
 
         question = qa.get("question")
         ground_truth = qa.get("answer")

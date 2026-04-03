@@ -62,6 +62,10 @@ def run_longmemeval(args):
         runner = BenchmarkRunner(client, agent.id, model_handle=args.model)
 
         sessions = item["haystack_sessions"]
+        # Limit sessions for faster validation during development
+        if args.limit:
+            sessions = sessions[:args.limit]
+            
         print(f"[LongMemEval] Item {item_idx + 1}/{total_items}: loading {len(sessions)} sessions")
         for session_idx, session in enumerate(sessions, start=1):
             runner.bulk_add_messages(session)

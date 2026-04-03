@@ -1,5 +1,5 @@
 Summary
-Add standardized evaluation benchmarks to measure and demonstrate Letta's memory system performance, including LOCOMO, MemBench, and LongMemEval.
+Issue #3115 should no longer be framed as "add LOCOMO, MemBench, and LongMemEval and call it done." The repository now contains partial benchmark scaffolding under `tests/benchmarks/`, but the benchmark landscape has shifted and the current implementation is not yet standardized, reproducible, or publication-grade.
 
 ---
 ### Update: 2026 Q1 Benchmark Landscape Has Evolved Significantly
@@ -46,137 +46,241 @@ I'd be happy to submit a PR implementing these benchmarks for Letta. The recomme
 @cpacker Would this direction be useful? Is benchmark integration on the roadmap?
 ---
 
-Motivation
-Currently, Letta lacks any standardized benchmark or evaluation code to measure memory system performance. This makes it difficult to:
+Updated Goal
+Build a credible benchmark suite for Letta's memory system that:
 
-Quantify improvements: No way to measure if changes to memory systems actually help
-Compare with alternatives: Cannot objectively compare Letta with other memory solutions (Mem0, MemAgent, etc.)
-Validate claims: Hard to demonstrate Letta's effectiveness to potential users
-Guide development: Without metrics, it's unclear which optimizations matter most
-Recent research papers (Mem0, MemAgent) use standardized benchmarks to demonstrate their effectiveness:
+- Measures Letta on modern memory benchmarks that better reflect 2026 agentic-memory evaluation.
+- Produces reproducible results that can be compared with published baselines.
+- Evaluates more than recall alone: quality, task success, efficiency, and governance.
+- Makes Letta's hierarchical/agentic memory design legible in head-to-head comparisons.
 
-Mem0 reports 26% improvement on LOCOMO benchmark
-MemAgent shows results on various long-context tasks
-Proposed Solution
-Add evaluation scripts and documentation for the following benchmarks:
+Why This Issue Needs Reframing
+When this issue was opened, LOCOMO, MemBench, and LongMemEval were reasonable starting points. Since then, newer 2026 work has highlighted major gaps in older benchmarks:
 
-1. LOCOMO (Long-Context Conversational Memory)
-Tests conversational memory recall and consistency
-Measures accuracy of retrieving information from past conversations
-Reference: Used by Mem0 (arXiv:2504.19413)
-2. MemBench
-Comprehensive memory evaluation suite
-Tests different memory operations (store, retrieve, update, delete)
-Reference: "A Survey on the Memory Mechanism of LLM-based Agents" (arXiv:2404.13501)
-3. LongMemEval
-Evaluates long-term memory retention
-Tests memory across extended conversation sessions
-Relevant issue: How can I implement LongMemEval testing on Letta? #2990 (closed) showed community interest
-Implementation Suggestions
-tests/
-└── benchmarks/
-    ├── locomo/
-    │   ├── run_locomo.py
-    │   └── README.md
-    ├── membench/
-    │   ├── run_membench.py
-    │   └── README.md
-    └── longmemeval/
-        ├── run_longmemeval.py
-        └── README.md
-Each benchmark should:
+- LOCOMO is useful as a baseline floor, but is increasingly saturated.
+- MemoryArena better stresses active, agentic memory decisions.
+- EverMemBench exposes failure modes that older recall-heavy benchmarks miss, especially multi-hop reasoning and temporal reasoning.
+- CloneMem tests realistic long-horizon persona memory and counterfactual memory tasks where simple retrieval baselines can outperform poorly structured memory systems.
 
-Be runnable with a single command
-Support different model configurations
-Output standardized metrics (accuracy, recall, F1, etc.)
-Generate comparison reports
+Per the latest issue discussion, the benchmark set should be updated to reflect this newer landscape.
 
-Implementation Details
-1.  **Project Setup**: 
-    *   Create the proposed directory structure under `tests/benchmarks`.
-    *   Each benchmark directory will contain the runner script, a README with instructions, and any specific data or configuration files.
+Current Repository Status
+There is already partial implementation work in the repo:
 
-2.  **Benchmark Adapters**:
-    *   For each benchmark (LOCOMO, MemBench, LongMemEval), create an adapter that allows the benchmark to interact with the Letta memory system. 
-    *   This will likely involve creating a `LettaAgent` with a specific persona and tools tailored for the benchmark's tasks.
+- `tests/benchmarks/common/`
+- `tests/benchmarks/locomo/`
+- `tests/benchmarks/membench/`
+- `tests/benchmarks/longmemeval/`
+- `tests/benchmarks/run_all.py`
 
-3.  **Data Loading and Preprocessing**:
-    *   The `run_<benchmark_name>.py` script for each benchmark will be responsible for loading the respective dataset.
-    *   Implement data loaders to handle the specific format of each benchmark's data (e.g., JSON, CSV).
-    *   Pre-process the data as needed to fit the input requirements of the Letta agent.
+What exists today is best described as prototype scaffolding, not completed benchmark support.
 
-4.  **Execution Logic**:
-    *   The core of each `run_<benchmark_name>.py` script will be the execution loop.
-    *   This loop will iterate through the benchmark's test cases, send the appropriate prompts to the `LettaAgent`, and capture the agent's responses.
-    *   The agent's memory state should be managed according to the benchmark's requirements (e.g., reset between tests, persisted across conversational turns).
+Recent progress already landed in this branch:
 
-5.  **Evaluation and Reporting**:
-    *   After the execution loop is complete, the script will evaluate the agent's responses against the ground truth from the benchmark data.
-    *   Implement functions to calculate the relevant metrics for each benchmark (e.g., accuracy for question answering, F1 score for information retrieval).
-    *   The final output should be a clear report, possibly in both console output and a file (e.g., CSV, JSON), summarizing the results. This will allow for easy comparison across different runs and with other systems.
+- Shared output payload helpers for benchmark runners
+- Provider/model handling derived from model handles rather than a hardcoded Ollama assumption
+- Shared benchmark preflight checks plus a standalone preflight CLI entrypoint
+- Per-step progress logging in the current runners
+- Targeted tests for helper logic, runner behavior, and preflight checks
 
-6.  **CI/CD Integration**:
-    *   Consider integrating the benchmark runners into the CI/CD pipeline. 
-    *   This will allow for continuous monitoring of memory performance and prevent regressions.
-    *   Initially, these could be run manually, but the goal should be to automate them.
+Current gaps in the existing code:
 
-Benefits
-Credibility: Objective metrics demonstrate Letta's effectiveness
-Development guidance: Clear targets for optimization
-Community engagement: Users can contribute benchmark results
-Research alignment: Enables academic comparisons
-References
-LOCOMO: Long-Context Conversational Memory benchmark
-MemBench: Memory evaluation suite from LLM agent survey
-Mem0 paper (arXiv:2504.19413) - benchmark methodology
-MemAgent paper (arXiv:2507.02259) - evaluation approaches
-"A Survey on the Memory Mechanism of LLM-based Agents" (arXiv:2404.13501)
-Additional Context
-I'd be happy to contribute to implementing these benchmarks. This could start with a simple LOCOMO integration and expand from there.
+1. Benchmark coverage is outdated.
+   - The current tree focuses on LOCOMO, MemBench, and LongMemEval only.
+   - It does not yet cover EverMemBench, MemoryArena, or CloneMem.
 
-Related closed issue: #2990 (LongMemEval testing question)
+2. Some implementations are synthetic or incomplete.
+   - `run_membench.py` falls back to synthetic tasks rather than a standardized benchmark workflow.
+   - The current runners do not yet establish publication-quality parity with external benchmark protocols.
 
-Activity
+3. Model/provider handling is not standardized.
+   - Benchmark utilities still contain local assumptions such as hardcoded Ollama capture behavior.
+   - Default model examples still point to `openai/gpt-4o-mini` rather than a documented benchmark matrix.
 
-github-project-automation
-added this to  🐛 Letta issue trackeron Dec 22, 2025
+4. Metrics are too narrow.
+   - Current runners focus mostly on simple F1/accuracy-style outputs.
+   - They do not yet implement the broader metric stack now expected for memory evaluation.
 
-github-project-automation
-moved this to To triage in  🐛 Letta issue trackeron Dec 22, 2025
-github-actions
-github-actions commented 3 weeks ago
-github-actions
-bot
-3 weeks ago – with GitHub Actions
-Contributor
-This issue is stale because it has been open for 30 days with no activity.
+5. Reproducibility is still incomplete.
+   - The branch now has a shared output payload shape, but the manifest still needs richer provenance details and schema hardening.
+   - We still need stronger guarantees around dataset/version/run comparability.
 
+6. CI and regression tracking are missing.
+   - There is no lightweight smoke benchmark lane or artifact-based benchmark history.
 
-github-actions
-added 
-stale
- 3 weeks ago
-Neelansh-Khare
-Neelansh-Khare commented 3 weeks ago
-Neelansh-Khare
-3 weeks ago
-is anyone working on this, or are you @Soein? I could take a look
+7. Contributor portability is only partially addressed.
+   - Fast preflight checks now exist for server availability, dataset presence, and model-handle validity.
+   - The remaining gap is a documented setup contract and support matrix for macOS, Linux, and Windows contributors.
 
+Updated Benchmark Priorities
+Tier 1: Recommended for first-class support
 
-github-actions
-removed 
-stale
- 3 weeks ago
-qdrddr
-qdrddr commented 2 days ago
-qdrddr
-2 days ago
-Also
-OOLONG
-MemoryAgentBench
+1. EverMemBench
+   - Large-scale benchmark with long interaction histories and stronger coverage of temporal reasoning, multi-hop attribution, and memory awareness.
+   - Important because published comparisons already include systems like Mem0, Zep, MemOS, and MemoBase, while Letta is absent.
 
-Neelansh-Khare
-Neelansh-Khare commented 2 days ago
-Neelansh-Khare
-2 days ago
-Working on this since I don't think anyone else is
+2. MemoryArena
+   - High-priority benchmark for active, agentic memory behavior.
+   - Especially relevant for Letta because it tests memory-guided decision making, not just passive recall.
+
+3. CloneMem
+   - Valuable for long-horizon personal memory and counterfactual tasks.
+   - Useful for testing whether Letta's structured memory actually beats flat retrieval baselines.
+
+Tier 2: Supplementary support
+
+1. LongMemEvalS
+   - Keep as a targeted long-term recall benchmark, but align to the updated "S" variant where possible.
+
+2. EMemBench
+   - Add as an interactive supplementary benchmark once the core evaluation harness is stable.
+
+3. LOCOMO
+   - Retain as a legacy baseline floor, not the main success criterion.
+
+Watchlist / nice-to-have
+
+- MemoryRewardBench
+- OOLONG
+- MemoryAgentBench
+
+Metric Stack We Should Implement
+The benchmark suite should report more than answer correctness. The evaluation plan should track four layers:
+
+1. Task effectiveness
+   - Task success
+   - Plan completion
+   - Final-answer correctness
+
+2. Memory quality
+   - Precision / recall / F1 where appropriate
+   - Staleness
+   - Contradictions
+   - Update correctness
+   - Temporal reasoning accuracy
+   - Multi-hop attribution quality
+
+3. Efficiency
+   - End-to-end latency
+   - LLM token usage
+   - Embedding usage
+   - Storage growth
+   - Retrieval volume / cost
+
+4. Governance
+   - Deletion compliance
+   - Data isolation
+   - Memory editability / traceability
+   - Privacy-sensitive retention checks where benchmark design permits
+
+Recommended Scope for This Issue
+This issue should cover the benchmark framework and the first wave of credible integrations, not every benchmark in the literature.
+
+Recommended deliverables:
+
+1. Stabilize the benchmark harness.
+   - Standardize runner interfaces.
+   - Remove hardcoded provider assumptions from common utilities.
+   - Support reproducible config manifests for model/provider/dataset versions.
+
+2. Reclassify existing benchmark code as prototype support.
+   - Keep current LOCOMO / MemBench / LongMemEval code where useful.
+   - Mark it clearly as incomplete or legacy where appropriate.
+
+3. Add first-class Tier 1 benchmark support.
+   - EverMemBench
+   - MemoryArena
+   - CloneMem
+
+4. Retain legacy/supplementary support.
+   - LOCOMO as baseline floor
+   - LongMemEvalS as supplementary recall benchmark
+   - EMemBench as optional follow-on
+
+5. Standardize reporting.
+   - Shared JSON result schema
+   - Per-run metadata manifest
+   - Aggregate comparison table generation
+
+6. Add regression-friendly automation.
+   - Small smoke subsets runnable in CI
+   - Full benchmark runs documented for manual/offline execution
+
+7. Make the benchmark suite contributor-friendly.
+   - Add a documented environment contract for OSS users.
+   - Add a preflight validator that fails fast on setup issues.
+   - Define and maintain a minimal support matrix for tested backends and operating systems.
+
+Proposed Implementation Plan
+Phase 0: Audit and cleanup
+
+- Audit existing code in `tests/benchmarks/`.
+- Identify what can be reused versus replaced.
+- Remove misleading "completed" claims from docs.
+
+Phase 1: Benchmark framework hardening
+
+- Define a common benchmark contract.
+- Add provider-agnostic ingestion and execution helpers.
+- Add structured result and metadata schemas.
+- Add timing / token / storage instrumentation hooks.
+- Add benchmark preflight validation for:
+  - Letta server connectivity
+  - Dataset availability
+  - Model handle format
+  - Required environment variables
+- Add a contributor-facing benchmark setup contract that documents:
+  - Supported Python versions
+  - Expected Letta server setup
+  - Supported backend examples
+  - Local versus hosted run expectations
+
+Phase 2: Modern benchmark integrations
+
+- Implement EverMemBench runner.
+- Implement MemoryArena runner.
+- Implement CloneMem runner.
+
+Phase 3: Legacy and supplementary alignment
+
+- Keep LOCOMO as a baseline runner.
+- Align LongMemEval support with the current LongMemEvalS direction.
+- Add EMemBench if dataset and workflow fit the harness cleanly.
+
+Phase 4: Comparison and regression workflows
+
+- Add result summarization scripts.
+- Add documented benchmark presets for local and hosted models.
+- Add CI smoke runs on tiny benchmark slices.
+- Add portability-oriented smoke checks and documentation for contributor setups across supported operating systems.
+
+Definition of Done
+This issue should be considered complete when:
+
+- Letta has reproducible benchmark runners for at least the Tier 1 set.
+- Existing prototype runners are either upgraded or explicitly documented as legacy/prototype.
+- Reports include effectiveness, memory-quality, efficiency, and governance dimensions where applicable.
+- Results are easy to rerun and compare across models/providers.
+- Contributors can validate benchmark readiness with a preflight step before starting long runs.
+- The benchmark setup contract and minimum cross-platform support expectations are documented.
+- Letta can be positioned in the modern memory-benchmark landscape with defensible methodology.
+
+References Mentioned In Issue Discussion
+Benchmarks:
+
+- EverMemBench (arXiv:2602.01313)
+- CloneMem (arXiv:2601.07023)
+- EMemBench (arXiv:2601.16690)
+- MemoryRewardBench (arXiv:2601.11969)
+- Chronos / LongMemEvalS (arXiv:2603.16862)
+- MemoryArena (as cited in arXiv:2603.07670)
+- LOCOMO (legacy baseline)
+
+Surveys / framing papers:
+
+- Memory for Autonomous LLM Agents (arXiv:2603.07670)
+- Anatomy of Agentic Memory (arXiv:2602.19320)
+- Graph-based Agent Memory (arXiv:2602.05665)
+
+Working Interpretation
+The work already in this repo is still useful, but it should be treated as a starting point for a more up-to-date benchmark program rather than as the finished implementation of #3115.

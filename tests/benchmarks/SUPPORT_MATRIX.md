@@ -22,13 +22,15 @@ This matrix documents the current support intent for the benchmark harness. It i
 
 | Benchmark | Status | Notes |
 | --- | --- | --- |
-| LOCOMO | Prototype | Runnable with current harness, still legacy/prototype scoped. |
+| LOCOMO | Prototype | Runnable with current harness, legacy baseline. |
 | MemBench synthetic | Prototype | Useful smoke/development path. |
 | MemBench real | Prototype | Runner exists; real benchmark parity still needs work. |
 | LongMemEval | Prototype | Runner exists; alignment to LongMemEvalS remains future work. |
-| EverMemBench | Not started | Planned Tier 1 target. |
-| MemoryArena | Not started | Planned Tier 1 target. |
-| CloneMem | Not started | Planned Tier 1 target. |
+| EverMemBench | Supported | Full Tier 1 runner implemented. |
+| MemoryArena | Supported | Full Tier 1 runner implemented for agentic tasks. |
+| CloneMem | Supported | Full Tier 1 runner implemented for digital traces. |
+| LongMemEvalS | Alignment | Alignment layer for the cleaned S variant. |
+| EMemBench | Alignment | Normalized alignment scaffold for EMemBench episodes. |
 
 ## Interpretation
 

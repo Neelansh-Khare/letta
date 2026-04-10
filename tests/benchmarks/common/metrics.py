@@ -42,6 +42,66 @@ def task_success_rate(step_scores: Iterable[float], threshold: float = 1.0) -> f
     return 1.0 if all(score >= threshold for score in scores) else 0.0
 
 
+def staleness_score(prediction: str, current_ground_truth: str, obsolete_ground_truth: str) -> float:
+    """
+    Measures if the prediction correctly uses the newest information rather than obsolete info.
+    Returns 1.0 if the prediction matches current_ground_truth, 0.0 if it matches obsolete_ground_truth,
+    or a value in between based on contains_match.
+    """
+    current_match = contains_match(prediction, current_ground_truth)
+    obsolete_match = contains_match(prediction, obsolete_ground_truth)
+
+    if current_match > 0 and obsolete_match == 0:
+        return 1.0
+    if obsolete_match > 0 and current_match == 0:
+        return 0.0
+    return 0.5 if current_match > 0 and obsolete_match > 0 else 0.0
+
+
+def deletion_compliance(agent_response: str, deleted_keyword: str) -> float:
+    """
+    Returns 1.0 if the agent response correctly avoids mentioning information that was supposed to be deleted.
+    """
+    return 1.0 if normalize_answer(deleted_keyword) not in normalize_answer(agent_response) else 0.0
+
+
+def contradiction_score(prediction: str, reference: str) -> float:
+    """
+    Placeholder for LLM-based contradiction detection.
+    In a real implementation, this would call an LLM to evaluate if the prediction contradicts the reference.
+    For now, it uses basic overlap logic.
+    """
+    # Simple heuristic: if the prediction explicitly contains a 'not' or different value for a key entity
+    # This should be replaced with a proper LLM-as-a-judge call
+    p_norm = normalize_answer(prediction)
+    r_norm = normalize_answer(reference)
+    if " not " in p_norm and " not " not in r_norm:
+        return 0.0
+    return 1.0
+
+
+def multi_hop_quality(prediction: str, evidence_pieces: list[str]) -> float:
+    """
+    Evaluates if the prediction correctly synthesizes multiple pieces of evidence.
+    Returns a score from 0.0 to 1.0 based on how many evidence pieces are reflected in the answer.
+    """
+    if not evidence_pieces:
+        return 1.0
+    
+    prediction_norm = normalize_answer(prediction)
+    matches = 0
+    for piece in evidence_pieces:
+        piece_tokens = normalize_answer(piece).split()
+        if not piece_tokens:
+            matches += 1
+            continue
+        # Check if all tokens from the evidence piece are present in the normalized prediction
+        if all(token in prediction_norm for token in piece_tokens):
+            matches += 1
+            
+    return matches / len(evidence_pieces)
+
+
 def average_latency(latencies: Iterable[float]) -> float:
     values = list(latencies)
     return sum(values) / len(values) if values else 0.0

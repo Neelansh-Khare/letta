@@ -16,19 +16,17 @@ This setup contract is for the benchmark harness under `tests/benchmarks/`. It i
 
 ## Supported Setup Pattern Today
 
-The best-supported local path in the current branch is:
+The harness supports both local and hosted LLMs:
 
-- Letta server running on `http://localhost:8283`
-- Local Ollama configured and visible through Letta
-- Model handle like `ollama/llama3.1:latest`
+- **Local**: Letta server running on `http://localhost:8283` with local Ollama (`ollama/llama3.1:latest`).
+- **Hosted**: Letta server configured with OpenAI or other hosted providers (`openai/gpt-4o-mini`).
 
 Example environment variables:
 
 ```bash
 export LETTA_BENCHMARK_BASE_URL="http://localhost:8283"
-export LETTA_BENCHMARK_MODEL="ollama/llama3.1:latest"
-export OLLAMA_BASE_URL="http://localhost:11434"
-export LETTA_PG_URI="postgresql://letta:letta@localhost:5432/letta"
+export LETTA_BENCHMARK_MODEL="openai/gpt-4o-mini"
+export OPENAI_API_KEY="sk-..."
 ```
 
 ## Contributor Workflow
@@ -65,12 +63,23 @@ uv run python tests/benchmarks/membench/run_membench.py \
   --limit 1
 ```
 
+## Regression Analysis
+
+After running a benchmark, you can compare the current results with a baseline to check for regressions:
+
+```bash
+uv run python tests/benchmarks/compare_results.py \
+  baseline_results.json \
+  tests/benchmarks/evermembench/results.json \
+  --fail-on-regression
+```
+
 ## Dataset Expectations
 
 - `LOCOMO`: dataset required
 - `MemBench synthetic`: dataset optional, falls back to generated synthetic data
 - `MemBench real`: dataset required
-- `LongMemEval`: dataset required
+- `LongMemEvalS`: dataset required
 
 Use the benchmark download scripts before running required-dataset benchmarks.
 
@@ -93,15 +102,14 @@ This is intended to make results more comparable across contributor setups.
 
 ## Known Limitations
 
-- The current branch is best-tested on macOS with a local Ollama-backed Letta server.
-- Windows and Linux are planned support targets but are not yet validated in this branch.
-- The benchmark suite is still prototype-level for several datasets and should not yet be treated as a final research benchmark pipeline.
+- The benchmark suite is currently in an active stabilization phase.
+- Some advanced metrics (like staleness and deletion compliance) are implemented but require specific dataset labeling to be fully exercised.
 
 ## Expectations For New Benchmark Work
 
 When adding or refactoring a benchmark:
 
 - Use model handles in `<provider>/<model>` format.
-- Keep preflight enabled by default.
+- Ensure the `BenchmarkRunner` correctly captures `memory_calls` for traceability.
 - Add or update tests for new shared helper behavior.
-- Update benchmark docs if you introduce new environment assumptions.
+- Use the smoke test lane (`--limit 1` or `--limit 2`) to verify functionality before long runs.

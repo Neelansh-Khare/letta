@@ -1,0 +1,89 @@
+name: 📊 Benchmarks Smoke Test
+
+on:
+  pull_request:
+    paths:
+      - 'letta/**'
+      - 'tests/benchmarks/**'
+      - '.github/workflows/benchmarks.yml'
+  workflow_dispatch:
+
+jobs:
+  smoke-test:
+    name: Tier 1 Smoke Test
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: |
+          uv sync --extra postgres --extra dev
+
+      - name: Migrate database
+        env:
+          LETTA_PG_PORT: 5432
+          LETTA_PG_USER: postgres
+          LETTA_PG_PASSWORD: postgres
+          LETTA_PG_DB: postgres
+          LETTA_PG_HOST: localhost
+        run: |
+          psql -h localhost -U postgres -d postgres -c 'CREATE EXTENSION IF NOT EXISTS vector'
+          uv run alembic upgrade head
+
+      - name: Start Letta server in background
+        env:
+          LETTA_PG_PORT: 5432
+          LETTA_PG_USER: postgres
+          LETTA_PG_PASSWORD: postgres
+          LETTA_PG_DB: postgres
+          LETTA_PG_HOST: localhost
+        run: |
+          uv run letta server &
+          # Wait for server to be ready
+          timeout 60s bash -c 'until curl -s http://localhost:8283/v1/health; do sleep 1; done'
+
+      - name: Run EverMemBench Smoke
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          uv run python tests/benchmarks/evermembench/download_data.py
+          uv run python tests/benchmarks/evermembench/run_evermembench.py --limit 2 --model openai/gpt-4o-mini
+
+      - name: Run MemoryArena Smoke
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          uv run python tests/benchmarks/memoryarena/download_data.py
+          uv run python tests/benchmarks/memoryarena/run_memoryarena.py --limit 2 --model openai/gpt-4o-mini
+
+      - name: Run CloneMem Smoke
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          uv run python tests/benchmarks/clonemem/download_data.py
+          uv run python tests/benchmarks/clonemem/run_clonemem.py --limit 1 --model openai/gpt-4o-mini

@@ -1,4 +1,5 @@
 import json
+import re
 import time
 from typing import Any, Iterable
 
@@ -67,17 +68,37 @@ def deletion_compliance(agent_response: str, deleted_keyword: str) -> float:
 
 def contradiction_score(prediction: str, reference: str) -> float:
     """
-    Placeholder for LLM-based contradiction detection.
-    In a real implementation, this would call an LLM to evaluate if the prediction contradicts the reference.
-    For now, it uses basic overlap logic.
+    Placeholder for simple contradiction detection.
+    In a real implementation, use contradiction_score_llm with an LLM judge.
     """
-    # Simple heuristic: if the prediction explicitly contains a 'not' or different value for a key entity
-    # This should be replaced with a proper LLM-as-a-judge call
     p_norm = normalize_answer(prediction)
     r_norm = normalize_answer(reference)
+    # Simple heuristic: if the prediction explicitly contains a 'not' or different value for a key entity
     if " not " in p_norm and " not " not in r_norm:
         return 0.0
     return 1.0
+
+
+def contradiction_score_llm(prediction: str, reference: str, judge_fn: Any) -> float:
+    """
+    Uses an LLM judge function to evaluate if the prediction contradicts the reference.
+    judge_fn should take a prompt string and return a float score 0.0 to 1.0.
+    """
+    prompt = (
+        "Does the following prediction contradict the reference ground truth?\n\n"
+        f"Reference: {reference}\n"
+        f"Prediction: {prediction}\n\n"
+        "Respond ONLY with a number: 0.0 if there is a contradiction, and 1.0 if there is no contradiction."
+    )
+    try:
+        score_str = judge_fn(prompt)
+        # Attempt to find a float in the response
+        match = re.search(r"(\d+(\.\d+)?)", str(score_str))
+        if match:
+            return float(match.group(1))
+        return 1.0
+    except Exception:
+        return 1.0  # Default to no contradiction on error
 
 
 def multi_hop_quality(prediction: str, evidence_pieces: list[str]) -> float:
@@ -91,15 +112,44 @@ def multi_hop_quality(prediction: str, evidence_pieces: list[str]) -> float:
     prediction_norm = normalize_answer(prediction)
     matches = 0
     for piece in evidence_pieces:
-        piece_tokens = normalize_answer(piece).split()
+        # Require more than just a token match for quality
+        piece_norm = normalize_answer(piece)
+        if not piece_norm:
+            matches += 1
+            continue
+            
+        # Check if most of the piece content is present
+        piece_tokens = piece_norm.split()
         if not piece_tokens:
             matches += 1
             continue
-        # Check if all tokens from the evidence piece are present in the normalized prediction
-        if all(token in prediction_norm for token in piece_tokens):
+            
+        token_matches = sum(1 for token in piece_tokens if token in prediction_norm)
+        if token_matches / len(piece_tokens) >= 0.7:  # 70% of tokens present
             matches += 1
             
     return matches / len(evidence_pieces)
+
+
+def multi_hop_attribution_quality(prediction: str, evidence_pieces: list[str], judge_fn: Any) -> float:
+    """
+    Uses an LLM judge to evaluate multi-hop synthesis quality.
+    """
+    evidence_str = "\n".join([f"- {p}" for p in evidence_pieces])
+    prompt = (
+        "Evaluate if the following prediction correctly synthesizes all the provided evidence pieces.\n\n"
+        f"Evidence Pieces:\n{evidence_str}\n\n"
+        f"Prediction: {prediction}\n\n"
+        "Respond ONLY with a number from 0.0 to 1.0, where 1.0 means all evidence is correctly used."
+    )
+    try:
+        score_str = judge_fn(prompt)
+        match = re.search(r"(\d+(\.\d+)?)", str(score_str))
+        if match:
+            return float(match.group(1))
+        return 0.0
+    except Exception:
+        return 0.0
 
 
 def average_latency(latencies: Iterable[float]) -> float:

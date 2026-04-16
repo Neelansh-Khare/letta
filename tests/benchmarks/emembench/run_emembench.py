@@ -54,6 +54,7 @@ def run_emembench(args):
         for question in episode.get("questions", []):
             response_messages, latency = runner.run_interaction_timed(question["question"])
             prediction = extract_text_from_messages(response_messages)
+            last_interaction = runner.get_history()[-1]
             details.append(
                 {
                     "episode_id": episode.get("episode_id"),
@@ -64,7 +65,8 @@ def run_emembench(args):
                     "f1": f1_for_any(prediction, question.get("answer", "")),
                     "exact_match": exact_match(prediction, question.get("answer", "")),
                     "latency_seconds": latency,
-                    "usage": runner.get_history()[-1].get("usage"),
+                    "usage": last_interaction.get("usage"),
+                    "memory_calls": last_interaction.get("memory_calls", []),
                 }
             )
 

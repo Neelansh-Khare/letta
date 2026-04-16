@@ -47,11 +47,23 @@ class BenchmarkRunner:
             }
 
         # Store interaction in history
+        memory_calls = []
+        for msg in response.messages:
+            if hasattr(msg, "tool_calls") and msg.tool_calls:
+                for tc in msg.tool_calls:
+                    name = getattr(tc.function, "name", "") if hasattr(tc, "function") else getattr(tc, "name", "")
+                    if any(keyword in name for keyword in ["core_memory", "archival_memory", "recall_memory"]):
+                        memory_calls.append({
+                            "tool": name,
+                            "arguments": getattr(tc.function, "arguments", "") if hasattr(tc, "function") else getattr(tc, "arguments", "")
+                        })
+
         self.history.append({
             "prompt": message,
             "response": response.messages,
             "usage": usage_data,
-            "latency_seconds": latency
+            "latency_seconds": latency,
+            "memory_calls": memory_calls
         })
 
         return response.messages

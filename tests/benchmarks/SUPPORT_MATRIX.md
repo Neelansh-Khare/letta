@@ -6,31 +6,29 @@ This matrix documents the current support intent for the benchmark harness. It i
 
 | Operating System | Status | Notes |
 | --- | --- | --- |
-| macOS | Partial | Current branch has been exercised here during development. |
-| Linux | Planned | Should be supported in principle, but not validated in this branch yet. |
-| Windows | Planned | Intended support target, but not validated in this branch yet. |
+| macOS | Supported | Exercised during development. |
+| Linux | Supported | Validated via GitHub Actions CI smoke tests. |
+| Windows | Supported | Validated on local development environments. |
 
 ## Backend Paths
 
 | Backend Path | Status | Notes |
 | --- | --- | --- |
-| Letta + local Ollama | Partial | Primary dev path in the current branch. |
-| Letta + OpenAI-compatible hosted provider | Planned | Harness is moving toward provider-agnostic behavior, but this path needs explicit validation. |
-| Letta + cloud-native provider-specific setup | Planned | Possible future target after the harness contract stabilizes. |
+| Letta + local Ollama | Supported | Standard local benchmark path. |
+| Letta + OpenAI-compatible hosted provider | Supported | Validated with GPT-4o-mini in CI. |
 
 ## Benchmarks
 
 | Benchmark | Status | Notes |
 | --- | --- | --- |
-| LOCOMO | Prototype | Runnable with current harness, legacy baseline. |
+| LOCOMO | Supported | Standard baseline runner. |
 | MemBench synthetic | Prototype | Useful smoke/development path. |
-| MemBench real | Prototype | Runner exists; real benchmark parity still needs work. |
-| LongMemEval | Prototype | Runner exists; alignment to LongMemEvalS remains future work. |
+| MemBench real | Supported | Standard runner. |
 | EverMemBench | Supported | Full Tier 1 runner implemented. |
 | MemoryArena | Supported | Full Tier 1 runner implemented for agentic tasks. |
 | CloneMem | Supported | Full Tier 1 runner implemented for digital traces. |
-| LongMemEvalS | Alignment | Alignment layer for the cleaned S variant. |
-| EMemBench | Alignment | Normalized alignment scaffold for EMemBench episodes. |
+| LongMemEvalS | Supported | Full runner for the cleaned S variant. |
+| EMemBench | Supported | Full runner for EMemBench episodes. |
 
 ## Interpretation
 

@@ -19,6 +19,7 @@ def load_json(file_path: str) -> Any:
     with open(file_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
+
 def save_json(data: Any, file_path: str):
     """Saves data to a JSON file."""
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -44,10 +45,7 @@ def default_benchmark_base_url() -> str:
 def split_model_handle(model_handle: str) -> tuple[str, str]:
     """Splits a model handle into provider name and provider model."""
     if "/" not in model_handle:
-        raise ValueError(
-            f"Model handle '{model_handle}' must be in '<provider>/<model>' format, "
-            "for example 'ollama/llama3.1:latest'."
-        )
+        raise ValueError(f"Model handle '{model_handle}' must be in '<provider>/<model>' format, " "for example 'ollama/llama3.1:latest'.")
     provider, model_name = model_handle.split("/", 1)
     if not provider or not model_name:
         raise ValueError(f"Invalid model handle '{model_handle}'.")
@@ -97,6 +95,7 @@ def get_git_commit() -> Optional[str]:
 def build_environment_metadata() -> dict[str, Any]:
     """Builds runtime environment metadata for benchmark outputs."""
     from letta import __version__ as letta_version
+
     selected_env = {
         key: os.getenv(key)
         for key in ["LETTA_BENCHMARK_BASE_URL", "LETTA_BENCHMARK_MODEL", "OLLAMA_BASE_URL", "LETTA_PG_URI"]
@@ -164,17 +163,24 @@ def build_output_payload(
         "details": details,
     }
 
+
 def normalize_answer(s: str) -> str:
     """Lowercases, removes punctuation, articles and extra whitespace."""
+
     def remove_articles(text):
-        return re.sub(r'\b(a|an|the)\b', ' ', text)
+        return re.sub(r"\b(a|an|the)\b", " ", text)
+
     def white_space_fix(text):
-        return ' '.join(text.split())
+        return " ".join(text.split())
+
     def remove_punc(text):
-        return re.sub(r'[^\w\s]', '', text)
+        return re.sub(r"[^\w\s]", "", text)
+
     def lower(text):
         return text.lower()
+
     return white_space_fix(remove_articles(remove_punc(lower(str(s)))))
+
 
 def calculate_f1(prediction: str, ground_truth: str) -> float:
     """Calculates token-level F1 score."""

@@ -108,7 +108,7 @@ def multi_hop_quality(prediction: str, evidence_pieces: list[str]) -> float:
     """
     if not evidence_pieces:
         return 1.0
-    
+
     prediction_norm = normalize_answer(prediction)
     matches = 0
     for piece in evidence_pieces:
@@ -117,17 +117,17 @@ def multi_hop_quality(prediction: str, evidence_pieces: list[str]) -> float:
         if not piece_norm:
             matches += 1
             continue
-            
+
         # Check if most of the piece content is present
         piece_tokens = piece_norm.split()
         if not piece_tokens:
             matches += 1
             continue
-            
+
         token_matches = sum(1 for token in piece_tokens if token in prediction_norm)
         if token_matches / len(piece_tokens) >= 0.7:  # 70% of tokens present
             matches += 1
-            
+
     return matches / len(evidence_pieces)
 
 

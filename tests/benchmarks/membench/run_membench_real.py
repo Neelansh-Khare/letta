@@ -44,7 +44,7 @@ def run_membench_real(args):
     items = data.get("roles", [])
 
     if args.limit:
-        items = items[:args.limit]
+        items = items[: args.limit]
 
     results = []
     total_items = len(items)
@@ -70,7 +70,7 @@ def run_membench_real(args):
         # Limit message segments for faster validation during development
         segments = message_list
         if args.limit:
-            segments = segments[:args.limit]
+            segments = segments[: args.limit]
 
         for sub_list_idx, sub_list in enumerate(segments, start=1):
             print(f"[MemBench Real] Item {item_idx}/{total_items}: segment {sub_list_idx}/{len(segments)}")
@@ -82,7 +82,7 @@ def run_membench_real(args):
                     formatted_messages.append({"role": "user", "content": user_msg})
                 if assistant_msg:
                     formatted_messages.append({"role": "assistant", "content": assistant_msg})
-            
+
             if formatted_messages:
                 runner.bulk_add_messages(formatted_messages)
 
@@ -102,17 +102,19 @@ def run_membench_real(args):
         usage = last_interaction.get("usage")
         f1 = calculate_f1(prediction, str(ground_truth))
 
-        results.append({
-            "tid": tid,
-            "question": question,
-            "ground_truth": ground_truth,
-            "prediction": prediction,
-            "f1": f1,
-            "latency_seconds": latency,
-            "usage": usage,
-            "total_usage": runner.get_total_usage(),
-            "total_latency_seconds": runner.get_total_latency(),
-        })
+        results.append(
+            {
+                "tid": tid,
+                "question": question,
+                "ground_truth": ground_truth,
+                "prediction": prediction,
+                "f1": f1,
+                "latency_seconds": latency,
+                "usage": usage,
+                "total_usage": runner.get_total_usage(),
+                "total_latency_seconds": runner.get_total_latency(),
+            }
+        )
         print(f"[MemBench Real] Item {item_idx}/{total_items}: complete (f1={f1:.4f})")
 
         client.agents.delete(agent.id)
@@ -150,10 +152,16 @@ def run_membench_real(args):
         payload = build_output_payload(benchmark_name=BENCHMARK_NAME, summary=summary, details=results, metadata=metadata)
         save_json(payload, args.output_path)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run MemBench Real benchmark on Letta.")
     parser.add_argument("--base_url", type=str, default=default_benchmark_base_url(), help="Letta server base URL")
-    parser.add_argument("--data_path", type=str, default="tests/benchmarks/membench/data/MemData/FirstAgent/simple.json", help="Path to MemBench real dataset")
+    parser.add_argument(
+        "--data_path",
+        type=str,
+        default="tests/benchmarks/membench/data/MemData/FirstAgent/simple.json",
+        help="Path to MemBench real dataset",
+    )
     parser.add_argument("--model", type=str, default=default_benchmark_model(), help="Model handle to use for the agent")
     parser.add_argument("--limit", type=int, default=None, help="Limit the number of items to process")
     parser.add_argument("--output_path", type=str, default="tests/benchmarks/membench/results_real.json", help="Path to save results")

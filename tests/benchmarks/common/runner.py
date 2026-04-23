@@ -23,11 +23,9 @@ class BenchmarkRunner:
     def run_interaction(self, message: str) -> List[Any]:
         """Runs a single interaction with the agent."""
         import time
+
         start = time.perf_counter()
-        response = self.client.agents.messages.create(
-            agent_id=self.agent_id,
-            messages=[MessageCreateParam(role="user", content=message)]
-        )
+        response = self.client.agents.messages.create(agent_id=self.agent_id, messages=[MessageCreateParam(role="user", content=message)])
         latency = time.perf_counter() - start
         self.total_latency_seconds += latency
 
@@ -53,18 +51,24 @@ class BenchmarkRunner:
                 for tc in msg.tool_calls:
                     name = getattr(tc.function, "name", "") if hasattr(tc, "function") else getattr(tc, "name", "")
                     if any(keyword in name for keyword in ["core_memory", "archival_memory", "recall_memory"]):
-                        memory_calls.append({
-                            "tool": name,
-                            "arguments": getattr(tc.function, "arguments", "") if hasattr(tc, "function") else getattr(tc, "arguments", "")
-                        })
+                        memory_calls.append(
+                            {
+                                "tool": name,
+                                "arguments": (
+                                    getattr(tc.function, "arguments", "") if hasattr(tc, "function") else getattr(tc, "arguments", "")
+                                ),
+                            }
+                        )
 
-        self.history.append({
-            "prompt": message,
-            "response": response.messages,
-            "usage": usage_data,
-            "latency_seconds": latency,
-            "memory_calls": memory_calls
-        })
+        self.history.append(
+            {
+                "prompt": message,
+                "response": response.messages,
+                "usage": usage_data,
+                "latency_seconds": latency,
+                "memory_calls": memory_calls,
+            }
+        )
 
         return response.messages
 
@@ -72,6 +76,7 @@ class BenchmarkRunner:
         """Runs a single interaction and returns the wall-clock latency."""
         # Note: run_interaction now tracks latency internally too, but we keep this for compatibility
         import time
+
         start = time.perf_counter()
         response_messages = self.run_interaction(message)
         return response_messages, time.perf_counter() - start

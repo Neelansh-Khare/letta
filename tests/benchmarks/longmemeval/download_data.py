@@ -1,6 +1,7 @@
 import os
 import requests
 
+
 def download_file(url, target_path):
     print(f"Downloading {url} to {target_path}...")
     response = requests.get(url, stream=True)
@@ -13,15 +14,12 @@ def download_file(url, target_path):
     else:
         print(f"Failed to download {url}: {response.status_code}")
 
+
 def download_longmemeval_data():
     base_url = "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/main/"
-    files = [
-        "longmemeval_oracle.json",
-        "longmemeval_s_cleaned.json",
-        "longmemeval_m_cleaned.json"
-    ]
+    files = ["longmemeval_oracle.json", "longmemeval_s_cleaned.json", "longmemeval_m_cleaned.json"]
     target_dir = "tests/benchmarks/longmemeval/data"
-    
+
     for file_name in files:
         url = base_url + file_name
         target_path = os.path.join(target_dir, file_name)
@@ -29,6 +27,7 @@ def download_longmemeval_data():
             download_file(url, target_path)
         else:
             print(f"File already exists: {target_path}")
+
 
 if __name__ == "__main__":
     download_longmemeval_data()

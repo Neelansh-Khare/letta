@@ -13,6 +13,7 @@ def run_command(command):
         return False
     return True
 
+
 def main():
     parser = argparse.ArgumentParser(description="Run all Letta memory benchmarks.")
     parser.add_argument("--base_url", type=str, default=default_benchmark_base_url(), help="Letta server base URL")
@@ -59,6 +60,7 @@ def main():
         if args.skip_preflight:
             command.append("--skip-preflight")
         run_command(command)
+
 
 if __name__ == "__main__":
     main()

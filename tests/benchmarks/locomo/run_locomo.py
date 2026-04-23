@@ -37,7 +37,7 @@ def run_locomo(args):
     data = load_json(args.data_path)
 
     if args.limit:
-        data = data[:args.limit]
+        data = data[: args.limit]
 
     results = []
     total_items = len(data)
@@ -49,7 +49,10 @@ def run_locomo(args):
             model=args.model,
             memory_blocks=[
                 {"label": "persona", "value": "I am a helpful assistant with a perfect memory."},
-                {"label": "human", "value": f"I am talking to {item['conversation']['speaker_a']} and {item['conversation']['speaker_b']}."},
+                {
+                    "label": "human",
+                    "value": f"I am talking to {item['conversation']['speaker_a']} and {item['conversation']['speaker_b']}.",
+                },
             ],
         )
 
@@ -77,8 +80,8 @@ def run_locomo(args):
         qa_items = item["qa"]
         # Limit QA items for faster validation during development
         if args.limit:
-            qa_items = qa_items[:args.limit]
-            
+            qa_items = qa_items[: args.limit]
+
         total_qa = len(qa_items)
         for qa_idx, qa in enumerate(qa_items, start=1):
             question = qa.get("question")
@@ -95,30 +98,34 @@ def run_locomo(args):
             usage = last_interaction.get("usage")
             f1 = calculate_f1(prediction, str(ground_truth))
 
-            qa_results.append({
-                "question": question,
-                "ground_truth": ground_truth,
-                "prediction": prediction,
-                "f1": f1,
-                "latency_seconds": latency,
-                "usage": usage,
-            })
+            qa_results.append(
+                {
+                    "question": question,
+                    "ground_truth": ground_truth,
+                    "prediction": prediction,
+                    "f1": f1,
+                    "latency_seconds": latency,
+                    "usage": usage,
+                }
+            )
 
         avg_f1 = average(result["f1"] for result in qa_results)
-        results.append({
-            "item_idx": item_idx,
-            "avg_f1": avg_f1,
-            "qa_count": len(qa_results),
-            "qa_details": qa_results,
-            "average_latency_seconds": average(qa["latency_seconds"] for qa in qa_results),
-            "total_latency_seconds": sum(qa["latency_seconds"] for qa in qa_results),
-            "usage": {
-                "completion_tokens": sum(qa.get("usage", {}).get("completion_tokens", 0) for qa in qa_results if qa.get("usage")),
-                "prompt_tokens": sum(qa.get("usage", {}).get("prompt_tokens", 0) for qa in qa_results if qa.get("usage")),
-                "total_tokens": sum(qa.get("usage", {}).get("total_tokens", 0) for qa in qa_results if qa.get("usage")),
-                "step_count": sum(qa.get("usage", {}).get("step_count", 0) for qa in qa_results if qa.get("usage")),
-            },
-        })
+        results.append(
+            {
+                "item_idx": item_idx,
+                "avg_f1": avg_f1,
+                "qa_count": len(qa_results),
+                "qa_details": qa_results,
+                "average_latency_seconds": average(qa["latency_seconds"] for qa in qa_results),
+                "total_latency_seconds": sum(qa["latency_seconds"] for qa in qa_results),
+                "usage": {
+                    "completion_tokens": sum(qa.get("usage", {}).get("completion_tokens", 0) for qa in qa_results if qa.get("usage")),
+                    "prompt_tokens": sum(qa.get("usage", {}).get("prompt_tokens", 0) for qa in qa_results if qa.get("usage")),
+                    "total_tokens": sum(qa.get("usage", {}).get("total_tokens", 0) for qa in qa_results if qa.get("usage")),
+                    "step_count": sum(qa.get("usage", {}).get("step_count", 0) for qa in qa_results if qa.get("usage")),
+                },
+            }
+        )
         print(f"[LOCOMO] Item {item_idx + 1}/{total_items}: complete (avg_f1={avg_f1:.4f})")
 
         client.agents.delete(agent.id)
@@ -155,6 +162,7 @@ def run_locomo(args):
         )
         payload = build_output_payload(benchmark_name=BENCHMARK_NAME, summary=summary, details=results, metadata=metadata)
         save_json(payload, args.output_path)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run LOCOMO benchmark on Letta.")

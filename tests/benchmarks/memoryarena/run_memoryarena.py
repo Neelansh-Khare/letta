@@ -159,7 +159,9 @@ def run_memoryarena(args):
             limit=args.limit,
             output_path=args.output_path,
         )
-        save_json(build_output_payload(benchmark_name=BENCHMARK_NAME, summary=summary, details=results, metadata=metadata), args.output_path)
+        save_json(
+            build_output_payload(benchmark_name=BENCHMARK_NAME, summary=summary, details=results, metadata=metadata), args.output_path
+        )
     print(summary)
 
 

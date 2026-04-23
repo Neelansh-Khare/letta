@@ -43,7 +43,7 @@ def run_longmemeval(args):
     data = load_json(args.data_path)
 
     if args.limit:
-        data = data[:args.limit]
+        data = data[: args.limit]
 
     results = []
     total_items = len(data)
@@ -64,8 +64,8 @@ def run_longmemeval(args):
         sessions = item["haystack_sessions"]
         # Limit sessions for faster validation during development
         if args.limit:
-            sessions = sessions[:args.limit]
-            
+            sessions = sessions[: args.limit]
+
         print(f"[LongMemEval] Item {item_idx + 1}/{total_items}: loading {len(sessions)} sessions")
         for session_idx, session in enumerate(sessions, start=1):
             runner.bulk_add_messages(session)
@@ -85,15 +85,17 @@ def run_longmemeval(args):
         usage = last_interaction.get("usage")
         f1 = calculate_f1(prediction, str(ground_truth))
 
-        results.append({
-            "item_idx": item_idx,
-            "question": question,
-            "ground_truth": ground_truth,
-            "prediction": prediction,
-            "f1": f1,
-            "latency_seconds": latency,
-            "usage": usage,
-        })
+        results.append(
+            {
+                "item_idx": item_idx,
+                "question": question,
+                "ground_truth": ground_truth,
+                "prediction": prediction,
+                "f1": f1,
+                "latency_seconds": latency,
+                "usage": usage,
+            }
+        )
         print(f"[LongMemEval] Item {item_idx + 1}/{total_items}: complete (f1={f1:.4f})")
 
         client.agents.delete(agent.id)
@@ -131,10 +133,13 @@ def run_longmemeval(args):
         payload = build_output_payload(benchmark_name=BENCHMARK_NAME, summary=summary, details=results, metadata=metadata)
         save_json(payload, args.output_path)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run LongMemEval benchmark on Letta.")
     parser.add_argument("--base_url", type=str, default=default_benchmark_base_url(), help="Letta server base URL")
-    parser.add_argument("--data_path", type=str, default="tests/benchmarks/longmemeval/data/longmemeval_s_cleaned.json", help="Path to LongMemEval JSON")
+    parser.add_argument(
+        "--data_path", type=str, default="tests/benchmarks/longmemeval/data/longmemeval_s_cleaned.json", help="Path to LongMemEval JSON"
+    )
     parser.add_argument("--model", type=str, default=default_benchmark_model(), help="Model handle to use for the agent")
     parser.add_argument("--limit", type=int, default=None, help="Limit the number of items to process")
     parser.add_argument("--output_path", type=str, default="tests/benchmarks/longmemeval/results.json", help="Path to save results")

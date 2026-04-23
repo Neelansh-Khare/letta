@@ -73,10 +73,7 @@ def check_model_available(base_url: str, model_handle: str, timeout: float = 10.
         return PreflightResult(
             ok=False,
             name="model_available",
-            message=(
-                f"Model '{model_handle}' was not found in Letta's available model list. "
-                f"Sample available handles: {sample}"
-            ),
+            message=(f"Model '{model_handle}' was not found in Letta's available model list. " f"Sample available handles: {sample}"),
             details={"available_handles": sample, "model": model_handle},
         )
 

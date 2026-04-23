@@ -89,9 +89,9 @@ def run_evermembench(args):
 
     client = Letta(base_url=args.base_url)
     topics = load_topics(args.data_dir)
-    
+
     # Track items processed across topics to honor global limit
-    remaining = args.limit if args.limit is not None else float('inf')
+    remaining = args.limit if args.limit is not None else float("inf")
 
     results = []
     for topic_id, dialogue_days, qa_items in topics:
@@ -112,11 +112,11 @@ def run_evermembench(args):
 
         topic_results = []
         latencies = []
-        
+
         # Honor global limit
         qa_to_process = qa_items
         if args.limit:
-            qa_to_process = qa_items[:int(remaining)]
+            qa_to_process = qa_items[: int(remaining)]
 
         for qa in tqdm(qa_to_process, desc=f"EverMemBench topic {topic_id}", leave=False):
             prompt = format_mcq_prompt(qa)
@@ -180,7 +180,9 @@ def run_evermembench(args):
             limit=args.limit,
             output_path=args.output_path,
         )
-        save_json(build_output_payload(benchmark_name=BENCHMARK_NAME, summary=summary, details=results, metadata=metadata), args.output_path)
+        save_json(
+            build_output_payload(benchmark_name=BENCHMARK_NAME, summary=summary, details=results, metadata=metadata), args.output_path
+        )
     print(summary)
 
 

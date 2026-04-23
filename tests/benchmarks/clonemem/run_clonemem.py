@@ -30,15 +30,12 @@ def load_personas(data_dir: str, context_len: str) -> list[dict]:
         paths = sorted(Path(data_dir).glob("*_benchmark_en.json"))
         if paths:
             print(f"[CloneMem] Found {len(paths)} files in root data_dir instead")
-            
+
     return [load_json(str(path)) for path in paths]
 
 
 def format_context_entry(trace: dict) -> str:
-    return (
-        f"[CloneMem][{trace.get('event_date', '')}][{trace.get('medium', 'unknown')}] "
-        f"{trace.get('content', '')}"
-    )
+    return f"[CloneMem][{trace.get('event_date', '')}][{trace.get('medium', 'unknown')}] " f"{trace.get('content', '')}"
 
 
 def format_question_prompt(question: dict) -> str:
@@ -140,7 +137,9 @@ def run_clonemem(args):
             output_path=args.output_path,
             extra={"context_len": args.context_len},
         )
-        save_json(build_output_payload(benchmark_name=BENCHMARK_NAME, summary=summary, details=results, metadata=metadata), args.output_path)
+        save_json(
+            build_output_payload(benchmark_name=BENCHMARK_NAME, summary=summary, details=results, metadata=metadata), args.output_path
+        )
     print(summary)
 
 

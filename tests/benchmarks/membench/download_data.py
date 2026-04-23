@@ -1,6 +1,7 @@
 import os
 import requests
 
+
 def download_file(url, target_path):
     print(f"Downloading {url} to {target_path}...")
     response = requests.get(url, stream=True)
@@ -12,6 +13,7 @@ def download_file(url, target_path):
         print(f"Downloaded to {target_path}")
     else:
         print(f"Failed to download {url}: {response.status_code}")
+
 
 def download_membench_data():
     base_url = "https://raw.githubusercontent.com/import-myself/Membench/main/MemData/"
@@ -28,7 +30,7 @@ def download_membench_data():
             "lowlevel_rec.json",
             "noisy.json",
             "post_processing.json",
-            "simple.json"
+            "simple.json",
         ],
         "ThirdAgent": [
             "RecMultiSession.json",
@@ -41,11 +43,11 @@ def download_membench_data():
             "lowlevel_rec.json",
             "noisy.json",
             "post_processing.json",
-            "simple.json"
-        ]
+            "simple.json",
+        ],
     }
     target_dir = "tests/benchmarks/membench/data/MemData"
-    
+
     for agent_type, files in paths.items():
         for file_name in files:
             url = f"{base_url}{agent_type}/{file_name}"
@@ -54,6 +56,7 @@ def download_membench_data():
                 download_file(url, target_path)
             else:
                 print(f"File already exists: {target_path}")
+
 
 if __name__ == "__main__":
     download_membench_data()

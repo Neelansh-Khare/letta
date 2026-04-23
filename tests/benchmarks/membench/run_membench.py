@@ -27,37 +27,21 @@ def create_synthetic_membench():
             "id": "task_1",
             "name": "Basic Memory Operations",
             "steps": [
-                {
-                    "operation": "store",
-                    "input": "My favorite color is blue.",
-                    "thought": "Storing favorite color."
-                },
-                {
-                    "operation": "retrieve",
-                    "input": "What is my favorite color?",
-                    "expected": "blue"
-                },
+                {"operation": "store", "input": "My favorite color is blue.", "thought": "Storing favorite color."},
+                {"operation": "retrieve", "input": "What is my favorite color?", "expected": "blue"},
                 {
                     "operation": "update",
                     "input": "Actually, I changed my mind. My favorite color is now green.",
-                    "thought": "Updating favorite color."
+                    "thought": "Updating favorite color.",
                 },
-                {
-                    "operation": "retrieve_updated",
-                    "input": "What is my favorite color now?",
-                    "expected": "green"
-                },
+                {"operation": "retrieve_updated", "input": "What is my favorite color now?", "expected": "green"},
                 {
                     "operation": "delete",
                     "input": "Please forget what my favorite color is.",
-                    "thought": "Deleting favorite color from memory."
+                    "thought": "Deleting favorite color from memory.",
                 },
-                {
-                    "operation": "retrieve_deleted",
-                    "input": "What is my favorite color?",
-                    "expected_not": "green"
-                }
-            ]
+                {"operation": "retrieve_deleted", "input": "What is my favorite color?", "expected_not": "green"},
+            ],
         },
         {
             "id": "task_2",
@@ -66,37 +50,22 @@ def create_synthetic_membench():
                 {
                     "operation": "store",
                     "input": "My friend Alice works at Google as a Software Engineer.",
-                    "thought": "Storing info about Alice."
+                    "thought": "Storing info about Alice.",
                 },
-                {
-                    "operation": "retrieve",
-                    "input": "Where does Alice work?",
-                    "expected": "Google"
-                },
-                {
-                    "operation": "retrieve",
-                    "input": "What is Alice's job title?",
-                    "expected": "Software Engineer"
-                },
+                {"operation": "retrieve", "input": "Where does Alice work?", "expected": "Google"},
+                {"operation": "retrieve", "input": "What is Alice's job title?", "expected": "Software Engineer"},
                 {
                     "operation": "update",
                     "input": "Alice recently got a new job at Meta as a Product Manager.",
-                    "thought": "Updating Alice's job info."
+                    "thought": "Updating Alice's job info.",
                 },
-                {
-                    "operation": "retrieve_updated",
-                    "input": "Where does Alice work now?",
-                    "expected": "Meta"
-                },
-                {
-                    "operation": "retrieve_updated",
-                    "input": "What is Alice's new job title?",
-                    "expected": "Product Manager"
-                }
-            ]
-        }
+                {"operation": "retrieve_updated", "input": "Where does Alice work now?", "expected": "Meta"},
+                {"operation": "retrieve_updated", "input": "What is Alice's new job title?", "expected": "Product Manager"},
+            ],
+        },
     ]
     return data
+
 
 def run_membench(args):
     if not args.skip_preflight:
@@ -123,7 +92,7 @@ def run_membench(args):
         data_source = "synthetic_fallback"
 
     if args.limit:
-        data = data[:args.limit]
+        data = data[: args.limit]
 
     overall_results = []
     total_tasks = len(data)
@@ -180,19 +149,23 @@ def run_membench(args):
 
             task_results.append(result)
 
-        overall_results.append({
-            "task_id": task["id"],
-            "task_name": task["name"],
-            "steps": task_results,
-            "average_latency_seconds": average(step["latency_seconds"] for step in task_results),
-            "total_latency_seconds": sum(step["latency_seconds"] for step in task_results),
-            "usage": {
-                "completion_tokens": sum(step.get("usage", {}).get("completion_tokens", 0) for step in task_results if step.get("usage")),
-                "prompt_tokens": sum(step.get("usage", {}).get("prompt_tokens", 0) for step in task_results if step.get("usage")),
-                "total_tokens": sum(step.get("usage", {}).get("total_tokens", 0) for step in task_results if step.get("usage")),
-                "step_count": sum(step.get("usage", {}).get("step_count", 0) for step in task_results if step.get("usage")),
-            },
-        })
+        overall_results.append(
+            {
+                "task_id": task["id"],
+                "task_name": task["name"],
+                "steps": task_results,
+                "average_latency_seconds": average(step["latency_seconds"] for step in task_results),
+                "total_latency_seconds": sum(step["latency_seconds"] for step in task_results),
+                "usage": {
+                    "completion_tokens": sum(
+                        step.get("usage", {}).get("completion_tokens", 0) for step in task_results if step.get("usage")
+                    ),
+                    "prompt_tokens": sum(step.get("usage", {}).get("prompt_tokens", 0) for step in task_results if step.get("usage")),
+                    "total_tokens": sum(step.get("usage", {}).get("total_tokens", 0) for step in task_results if step.get("usage")),
+                    "step_count": sum(step.get("usage", {}).get("step_count", 0) for step in task_results if step.get("usage")),
+                },
+            }
+        )
         successes = sum(1 for step in task_results if step["success"])
         print(f"[MemBench] Task {task_index}/{total_tasks}: complete ({successes}/{total_steps} successful)")
 
@@ -202,12 +175,7 @@ def run_membench(args):
     successful_steps = sum(sum(1 for step in result["steps"] if step["success"]) for result in overall_results)
     accuracy = successful_steps / total_steps if total_steps > 0 else 0
 
-    retrieval_scores = [
-        step["f1"]
-        for result in overall_results
-        for step in result["steps"]
-        if "f1" in step
-    ]
+    retrieval_scores = [step["f1"] for result in overall_results for step in result["steps"] if "f1" in step]
     retrieval_f1 = average(retrieval_scores)
 
     print("\nMemBench Benchmark Summary:")
@@ -246,10 +214,13 @@ def run_membench(args):
         payload = build_output_payload(benchmark_name=BENCHMARK_NAME, summary=summary, details=overall_results, metadata=metadata)
         save_json(payload, args.output_path)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run MemBench benchmark on Letta.")
     parser.add_argument("--base_url", type=str, default=default_benchmark_base_url(), help="Letta server base URL")
-    parser.add_argument("--data_path", type=str, default="tests/benchmarks/membench/data/membench_synthetic.json", help="Path to MemBench dataset")
+    parser.add_argument(
+        "--data_path", type=str, default="tests/benchmarks/membench/data/membench_synthetic.json", help="Path to MemBench dataset"
+    )
     parser.add_argument("--model", type=str, default=default_benchmark_model(), help="Model handle to use for the agent")
     parser.add_argument("--limit", type=int, default=None, help="Limit the number of tasks to process")
     parser.add_argument("--output_path", type=str, default="tests/benchmarks/membench/results.json", help="Path to save results")
